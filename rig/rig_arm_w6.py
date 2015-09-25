@@ -13,13 +13,13 @@ class Rig_Arm:
 
     def rig_arm(self):
         # Create Ik joints
-        self.createJoint(ikjnt_list)
+        createJoint(ikjnt_list)
         cmds.select(d=True)
         # Create Fk joints
-        self.createJoint(fkjnt_list)
+        createJoint(fkjnt_list)
         cmds.select(d=True)
         # Create Rig joints
-        self.createJoint(rigjnt_list)
+        createJoint(rigjnt_list)
         cmds.select(d=True)
 
 
@@ -28,11 +28,11 @@ class Rig_Arm:
         ikh = cmds.ikHandle( n='ikh_arm', sj='ik_shoulder_jnt', ee='ik_wrist_jnt', sol='ikRPsolver', p=2, w=1 )
 
         ikctrlinfo = [[ikjnt_list[2][1], 'ctrl_ik_arm', 'grp_ctrl_ik_arm']]
-        self.createControl(ikctrlinfo)
+        createControl(ikctrlinfo)
 
-        pvpos = self.calculatePVPosition([ikjnt_list[0][0], ikjnt_list[1][0], ikjnt_list[2][0]])
+        pvpos = calculatePVPosition([ikjnt_list[0][0], ikjnt_list[1][0], ikjnt_list[2][0]])
         pvctrlinfo = [[pvpos, 'ctrl_pv_arm', 'grp_ctrl_pv_arm']]
-        self.createControl(pvctrlinfo)
+        createControl(pvctrlinfo)
 
         # Parent ikh to ctrl
         cmds.parent('ikh_arm', 'ctrl_ik_arm')
@@ -47,7 +47,6 @@ class Rig_Arm:
         fkctrlinfo = [[fkjnt_list[0][1], 'ctrl_fk_shoulder', 'grp_ctrl_fk_shoulder'],
         [fkjnt_list[1][1], 'ctrl_fk_elbow', 'grp_ctrl_fk_elbow'],
         [fkjnt_list[2][1], 'ctrl_fk_wrist', 'grp_ctrl_fk_wrist']]
-        self.createControl(fkctrlinfo)
 
         # Parent fk controls
         cmds.parent(fkctrlinfo[1][2], fkctrlinfo[0][1])
@@ -55,11 +54,11 @@ class Rig_Arm:
         # Connect Ik and Fk to Rig joints
 
 
-    def createJoint(self, jntinfo):
+    def createJoint(jntinfo):
     	for item in jntinfo:
     		cmds.joint(n=item[0], p=item[1])
 
-    def createControl(self, ctrlinfo):
+    def createControl(ctrlinfo):
     	for info in ctrlinfo:
     		# Create ik control
     		# Get ws position of wrist joint
@@ -73,7 +72,7 @@ class Rig_Arm:
     		# Move the group to the joint
     		cmds.xform(ctrlgrp, t=pos, ws=True)
 
-    def calculatePVPosition(self, jnts):
+    def calculatePVPosition(jnts):
         from maya import cmds , OpenMaya
         start = cmds.xform(jnts[0] ,q=True ,ws=True, t=True)
         mid = cmds.xform(jnts[1] ,q=True ,ws=True, t=True)
