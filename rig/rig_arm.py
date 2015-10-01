@@ -5,10 +5,6 @@ ikjnt_list = [['ik_shoulder_jnt', [0.0, 0.0, 0.0]], ['ik_elbow_jnt', [-1.0, 0.0,
 fkjnt_list = [['fk_shoulder_jnt', [0.0, 0.0, 0.0]], ['fk_elbow_jnt', [-1.0, 0.0, 2.0]], ['ifk_wrist_jnt', [0.0, 0.0, 4.0]], ['fk_wristEnd_jnt', [0.0, 0.0, 6.0]]]
 rigjnt_list = [['rig_shoulder_jnt', [0.0, 0.0, 0.0]], ['rig_elbow_jnt', [-1.0, 0.0, 2.0]], ['rig_wrist_jnt', [0.0, 0.0, 4.0]], ['rig_wristEnd_jnt', [0.0, 0.0, 6.0]]]
 
-
-
-
-
 class Rig_Arm:
 
     def rig_arm(self):
