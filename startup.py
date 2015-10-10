@@ -1,4 +1,5 @@
 import maya.cmds as cmds
+import os
 
 print "Startup"
 
@@ -8,5 +9,9 @@ cmds.currentUnit( time='ntsc' )
 # Change the current linear unit to inches
 cmds.currentUnit( linear='cm' )
 
+# Set a system path to data files.  We can do this with the os module
+os.environ["RDOJO_DATA"] = 'C:/Users/Griffy/Documents/GitHub/Python_101_S2_2015/data/'
+
 import ui.ui as ui
 reload(ui)
+ui.RDojo_UI()
