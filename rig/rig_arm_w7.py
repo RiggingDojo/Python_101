@@ -101,3 +101,8 @@ class Rig_Arm:
   
         # Constrain fk joints to controls.
         [cmds.parentConstraint(self.rig_info['fkcontrols'][i][1], self.rig_info['fkjnts'][i]) for i in range(len(self.rig_info['fkcontrols']))]
+
+
+
+
+

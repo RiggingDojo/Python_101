@@ -1,4 +1,6 @@
 import maya.cmds as cmds
+import os
+from functools import partial
 
 # The UI class
 class RDojo_UI:
@@ -17,6 +19,14 @@ class RDojo_UI:
         This will allow us to access these elements later. """
         self.UIElements = {}
 
+        # This dictionary will store all of the available rigging modules.
+        self.rigmodlst = []
+        rigcontents = os.listdir(os.environ["RDOJO_DATA"]+ 'rig/')
+        for mod in rigcontents:
+            if '.pyc' not in mod or '.__init__' not in mod:
+                self.rigmodlst.append(mod)
+        print self.rigmodlst 
+
     def ui(self, *args):
         """ Check to see if the UI exists """
         windowName = "Window"
@@ -25,7 +35,7 @@ class RDojo_UI:
         """ Define width and height for buttons and windows"""    
         windowWidth = 480
         windowHeight = 80
-        buttonWidth = 100
+        buttonWidth = 55
         buttonHeight = 30
 
         self.UIElements["window"] = cmds.window(windowName, width=windowWidth, height=windowHeight, title="RDojo_UI", sizeable=True)
@@ -34,18 +44,24 @@ class RDojo_UI:
         self.UIElements["guiFrameLayout1"] = cmds.frameLayout( label='Layout', borderStyle='in', p=self.UIElements["mainColLayout"] )
         self.UIElements["guiFlowLayout1"] = cmds.flowLayout(v=False, width=windowWidth, height=windowHeight/2, wr=True, bgc=[0.2, 0.2, 0.2], p=self.UIElements["guiFrameLayout1"])
         
-        # Menu listing all the layout files.
-        cmds.separator(w=10, hr=True, st='none', p=self.UIElements["guiFlowLayout1"])
-        self.UIElements["rig_button"] = cmds.button(label='rig arm', width=buttonWidth, height=buttonHeight, bgc=[0.2, 0.4, 0.2], p=self.UIElements["guiFlowLayout1"], c=self.rigarm) 
+        # Dynamically make a button for each rigging module.
+        for mod in self.rigmodlst:
+            buttonname = mod.replace('.py', '')
+            cmds.separator(w=10, hr=True, st='none', p=self.UIElements["guiFlowLayout1"])
+            self.UIElements[buttonname] = cmds.button(label=buttonname, width=buttonWidth, height=buttonHeight, bgc=[0.2, 0.4, 0.2], p=self.UIElements["guiFlowLayout1"], c=partial(self.rigmod, buttonname)) 
+                                                                                                                                      
 
         """ Show the window"""
         cmds.showWindow(windowName)
 
         
-    def rigarm(*args):
-        import rig.rig_arm as rig_arm
-        reload(rig_arm)
-        rig_arm = rig_arm.Rig_Arm()
-        rig_arm.rig_arm()
+    def rigmod(self, modfile, *args):
+        """__import__ basically opens a module and reads some info from it 
+            without actually loading the module in memory."""
+        mod = __import__("rig."+modfile, {}, {}, [modfile])
+        reload(mod)
+        # getattr will get an attribute from a class
+        moduleClass = getattr(mod, mod.classname)
+        moduleInstance = moduleClass()
 
 
