@@ -1,5 +1,7 @@
 import maya.cmds as cmds
 import os
+import system.utils as utils
+reload(utils)
 
 print "Startup"
 
@@ -16,3 +18,5 @@ os.environ["RDOJO_DATA"] = 'C:/Users/Griffy/Documents/GitHub/Python_101_S2_2015/
 import ui.ui as ui
 reload(ui)
 ui.RDojo_UI()
+
+utils.setupMatchScripts()

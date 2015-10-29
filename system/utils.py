@@ -1,6 +1,7 @@
 import maya.cmds as cmds
 import json
 import tempfile
+import os
 
 def writeJson(fileName, data):
     with open(fileName, 'w') as outfile:
@@ -23,18 +24,22 @@ def createJoint(name, position, instance):
 def createControl(ctrlinfo):
     control_info = []
     for info in ctrlinfo:
+        print
         # Create ik control
-        # Get ws position of wrist joint
+        # Get ws position of the joint
         pos = info[0]
-        # Create an empty group
-        ctrlgrp = cmds.group( em=True, name='grp_' + info[1] )
         # Create circle control object
-        ctrl = cmds.circle( n=info[1], nr=(0, 0, 1), c=(0, 0, 0) )
-        # Parent the control to the group
-        cmds.parent(ctrl, ctrlgrp)
+        ctrl_file = os.environ["RDOJO_DATA"]+ 'controls/' + info[2]
+         # Import a control object
+        cmds.file(ctrl_file, i=True)
+        ctrl = info[1]
+        ctrlgrp = 'grp_' + info[1]
+        if cmds.objExists('grp_control') == True:
+            cmds.rename('grp_control', ctrlgrp )
+            cmds.rename('control', ctrl)
         # Move the group to the joint
         cmds.xform(ctrlgrp, t=pos, ws=True)
-        control_info.append([ctrlgrp, ctrl[0]])
+        control_info.append([ctrlgrp, ctrl])
     return(control_info)
 
 
@@ -81,3 +86,19 @@ def connectThroughBC(parentsA, parentsB, children, instance, switchattr ):
         cmds.connectAttr(bcNodeR + '.output', children[j] + '.rotate')
         cmds.connectAttr(bcNodeS + '.output', children[j] + '.scale')
     return constraints
+
+def match_ikfk(*args):
+    print "Match"
+    initializesj = cmds.scriptJob(runOnce=False, kws=False, e=["SelectionChanged", checkForSwitch])
+
+def checkForSwitch(*args):
+    print "Check"
+    sel = cmds.ls(sl=True)[0]
+    print sel
+    print cmds.listAttrs(sel, k=True)
+    if ".IK_FK" in cmds.listAttrs(cmds.ls(sl=True)[0], k=True):
+        print "Has Switch"
+
+def setupMatchScripts(*args):
+    # Look for controls with IK_FK attributes and set scriptJobs on them.
+    print "Setup Match"

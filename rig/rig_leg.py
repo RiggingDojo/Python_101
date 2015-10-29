@@ -6,11 +6,11 @@ reload(utils)
 
 # We can use variables above the class level that can be read on class import
 # This is also known as an attribute of a class
-classname = 'Rig_Arm'
-lytfile = 'arm.json'
-numjnts = 4
+classname = 'Rig_Leg'
+lytfile = 'leg.json'
+numjnts = 5
 
-class Rig_Arm:
+class Rig_Leg:
     def __init__(self, uiinfo):
         print uiinfo
         # Get our joint lists from a json file.
