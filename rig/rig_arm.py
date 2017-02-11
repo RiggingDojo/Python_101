@@ -7,182 +7,186 @@ Description:
 '''
 
 import pymel.core as pm
+import system.ctrl_shapes as cShape
+import json
 
 print 'Starting IK-FK Arm Rig...'
 
+class GlobalVars:
 
-def createJoint():
-	# create joint position based on manual creation values
-	jntList = [['shoulder_jnt', [-7, 0, 2]], ['elbow_jnt', [-1, 0, 0]], ['wrist_jnt', [4, 0, 2]], ['wristEND_jnt', [7, 0, 3]]]
-	armList = ['ik_', 'fk_', 'rig_']
+	rigInfo = json.loads(inputData)
 
-	for item in armList:
-		for jnt in jntList:
-			jntName = item+jnt[0]
-			pm.joint(name=jntName, position=jnt[1], radius=.5)
+'''
+I was thinking I could break out the keys into their separate lists.  Don't know if this would be the way to go or not.
+
+	for key, value in rigInfo.iteritems():
+		key = {}
+		key = value
+
+rig_data['bodyPlacement'] = ['lt_', 'rt_']
+rig_data['jntType'] = ['ik_', 'fk_', 'rig_', 'bind_']
+rig_data['armJnts']	= ['shoulder_jnt', 'elbow_jnt', 'wrist_jnt', 'wristEND_jnt']
+rig_data['armIKCtrls']	= ['ctrl_ikWrist', 'ikh_arm', 'ctrl_PV_arm', 'ctrl_ikHand']
+rig_data['armFKCtrls']	= ['ctrl_fkShoulder', 'ctrl_fkElbow', 'ctrl_fkWrist']
+rig_data['armGrps'] = ['grp_ctrl_ikWrist', 'grp_ctrl_fkShoulder', 'grp_ctrl_fkElbow', 'grp_ctrl_fkWrist', 'grp_arm']
+rig_data['armPos'] = [[-7, 0, 2], [-1, 0, 0], [4, 0, 2], [7, 0, 3]]
+'''
+
+	
+class RigArm():
+
+	def createRig(self):
+		self.createJoint()
+		self.createIK()
+		self.createFK()
+		self.connectJoints()
+		self.createPoleVector()
+		self.createIKSwitch()
+
+
+	def createJoint(self):
+		armList = {} 
+		armList = GlobalVars.rigInfo['jntType']
+		for key in armList.iteritems():
+			print value
+
+		for item in armList:
+			for jnt in jntList:
+				jntName = item+jnt[0]
+				pm.joint(name=jntName, position=jnt[1], radius=.5)
+
+			pm.select(deselect=True)
+
+
+	def createIK(self):
+		# create IK handle
+		pm.ikHandle(name='ikh_arm', startJoint='ik_shoulder_jnt', endEffector='ik_wrist_jnt', solver='ikRPsolver', priority=2, weight=1)
+
+		# get world space position of wrist joint
+		posWrist = pm.xform('ik_wrist_jnt', query=True, translation=True, worldSpace=True)
+
+		# create an empty group and orient to wrist
+		pm.group(empty=True, name='grp_ctrl_ikWrist')
+
+		# create square control
+		#TODO: need to get control name - ctrl_ikWrist
+		ctrl_ikWrist = cShape.square(self, ctrlName)
+
+		# parent control to group
+		pm.parent('ctrl_ikWrist', 'grp_ctrl_ikWrist')
+
+		# move the group to the joint
+		pm.xform('grp_ctrl_ikWrist', translation=posWrist, worldSpace=True)
+
+		# parent ik handle to wrist control
+		pm.parent('ikh_arm', 'ctrl_ikWrist')
+
+
+	def createFK(self):
+		# get list of selected objects minus the end joint
+		pm.select('fk_shoulder_jnt')
+		selJoints = pm.ls(selection=True, dag=True)
+		selJoints.pop(-1)
+
+		# loop thru the selected joints
+		for jnt in selJoints:
+			# get world space position of the joint
+			posWrist = pm.xform(jnt, query=True, translation=True, worldSpace=True)
+
+			# pull out the joint name, upper case the first letter and concatenate to fk
+			jntName = 'fk' + jnt.split('_')[1].title()
+
+			# create group from joint name
+			grp = pm.group(name='grp_ctrl_' + jntName, empty=True)
+
+			#TODO: add control name - control_jointname
+			ctrl_jnt = cShape.circle(self, ctrlName)
+			
+			# parent control to grp
+			pm.parent(ctrl, grp)
+
+			# move group to joint
+			pm.xform(grp, translation=posWrist, worldSpace=True)
+
+			# constrain joint to control
+			pm.parentConstraint(ctrl, jnt, maintainOffset=True)
+
+
+	def connectJoints(self):
+		# connect IK and FK to rig joints
+		# select all three joint chains and group together
+		pm.select('rig_shoulder_jnt', replace=True)
+		pm.select('fk_shoulder_jnt', add=True)
+		pm.select('ik_shoulder_jnt', add=True)
+		pm.group(name='grp_arm')
+
+		# select same joint from each arm and add orient constraint
+		pm.orientConstraint('fk_shoulder_jnt', 'ik_shoulder_jnt', 'rig_shoulder_jnt')
+		pm.orientConstraint('fk_elbow_jnt', 'ik_elbow_jnt', 'rig_elbow_jnt')
+		pm.orientConstraint('fk_wrist_jnt', 'ik_wrist_jnt', 'rig_wrist_jnt')
+
+		# create control hierarchy
+		pm.parent('grp_ctrl_fkWrist', 'ctrl_fkElbow')
+		pm.parent('grp_ctrl_fkElbow', 'ctrl_fkShoulder')
 
 		pm.select(deselect=True)
 
 
-def createIK():
-	# create IK handle
-	pm.ikHandle(name='ikh_arm', startJoint='ik_shoulder_jnt', endEffector='ik_wrist_jnt', solver='ikRPsolver', priority=2, weight=1)
+	def createPoleVector(self):
+		# used Lionel Gallat's idea for the pole vector - just converted to python
+		# create locator for placement of the pole vector
+		pm.spaceLocator(name='lctr_PV_arm')
+		posElbow = pm.xform('ik_elbow_jnt', query=True, translation=True, worldSpace=True)
+		pm.xform('lctr_PV_arm', worldSpace=True, translation=posElbow)
+		pm.setAttr('lctr_PV_arm.tz', posElbow[2] - 5)
 
-	# get world space position of wrist joint
-	posWrist = pm.xform('ik_wrist_jnt', query=True, translation=True, worldSpace=True)
+		# set visibility attribute
+		pm.setAttr('lctr_PV_arm.visibility', False)
 
-	# create an empty group and orient to wrist
-	pm.group(empty=True, name='grp_ctrl_ikWrist')
+		# create pole vector control
+		pm.circle(name='ctrl_PV_arm', normal=(0,1,0), radius=1)[0]
+		pm.select('ctrl_PV_arm.ep[2:3]', 'ctrl_PV_arm.ep[5:6]', replace=True)
+		pm.xform(scale=[.318733, 1, 1])
+		pm.select('ctrl_PV_arm.ep[3]', 'ctrl_PV_arm.ep[5]', replace=True)
+		pm.xform(scale=[.400636, 1, 1])
 
-	# create circle control
-	pm.curve(name='ctrl_ikWrist', degree=1, point=[(1.25, 0, 0), (0, 0, 0), (0, 0, 1.25), (1.25, 0, 1.25), (1.25, 0, 0)], knot=[0, 1, 2, 3, 4])
-	pm.xform('ctrl_ikWrist', scale=(1.5, 1.5, 1.5), rotation=(0, 0, 90), preserve=True, centerPivots=True)
-	pm.makeIdentity('ctrl_ikWrist', apply=True, translate=1, rotate=1, scale=1, normal=0, preserveNormals=1) 
+		# move control to locator position
+		temp = pm.pointConstraint('lctr_PV_arm', 'ctrl_PV_arm')
+		pm.delete(temp)
+		pm.makeIdentity('ctrl_PV_arm', apply=True, translate=1, rotate=1, scale=1, normal=0, preserveNormals=1) 
+		pm.delete('lctr_PV_arm')
+		pm.select(deselect=True)
 
-	'''
-	this should work and it does to a certain degree
-	the ik arm ends up off center from the rig arm
-	and I do not know where to place this code to 
-	keep that from happening
-
-	# use parent constraint to center curve control
-	#temp=pm.parentConstraint('ctrl_ikWrist', 'ik_wrist_jnt')
-	#pm.delete(temp)
-	'''
-
-	# parent control to group
-	pm.parent('ctrl_ikWrist', 'grp_ctrl_ikWrist')
-
-	# move the group to the joint
-	pm.xform('grp_ctrl_ikWrist', translation=posWrist, worldSpace=True)
-
-	# parent ik handle to wrist control
-	pm.parent('ikh_arm', 'ctrl_ikWrist')
+		# constrain the IK handle to the pole vector control
+		pm.poleVectorConstraint('ctrl_PV_arm', 'ikh_arm')
 
 
-def createFK():
-	# get list of selected objects minus the end joint
-	pm.select('fk_shoulder_jnt')
-	selJoints = pm.ls(selection=True, dag=True)
-	selJoints.pop(-1)
+	def createIKSwitch(self):
 
-	# loop thru the selected joints
-	for jnt in selJoints:
-		# get world space position of the joint
-		posWrist = pm.xform(jnt, query=True, translation=True, worldSpace=True)
+		#TODO: get control name - ctrl_ikHand
+		# creates text for IK/FK 
+		ctrl_ikHand = cShape.text(self, 'switch', ctrlName)
 
-		# pull out the joint name, upper case the first letter and concatenate to fk
-		jntName = 'fk' + jnt.split('_')[1].title()
+		# rename control
+		newName = ctrl_ikHand[0].strip('Shape')
+		txtCurve = pm.rename(ctrl_ikHand[0], newName, ignoreShape = True)
+		pm.xform(ctrl_ikHand, centerPivots = True)
 
-		# create group from joint name
-		grp = pm.group(name='grp_ctrl_' + jntName, empty=True)
+		# create locator for the IK switch
+		pm.spaceLocator(name='lctr_switch')
+		posEnd = pm.xform('rig_wristEND_jnt', query=True, translation=True, worldSpace=True)
+		pm.xform('lctr_switch', worldSpace=True, translation=posEnd)
+		pm.setAttr('lctr_switch.tx', posEnd[0] + 1.25)
 
-		# create square control from joint name
-		ctrl = pm.circle(name='ctrl_' + jntName, normal=(1,0,0), center=(0,0,0), radius=1.5, constructionHistory=False)
-		
-		# parent control to grp
-		pm.parent(ctrl, grp)
+		# move control to locator position
+		temp = pm.pointConstraint('lctr_switch', ctrl_ikHand)
+		pm.delete(temp)
+		pm.xform(ctrl_ikHand, worldSpace=True, rotation=(0,-90,0), scale=(.5,.5,.5))
+		pm.makeIdentity(ctrl_ikHand, apply=True, translate=1, rotate=1, scale=1, normal=0, preserveNormals=1) 
+		pm.delete('lctr_switch')
 
-		# move group to joint
-		pm.xform(grp, translation=posWrist, worldSpace=True)
+		pm.select(deselect=True)
 
-		# constrain joint to control
-		pm.parentConstraint(ctrl, jnt, maintainOffset=True)
-
-
-def connectJoints():
-	# connect IK and FK to rig joints
-	# select all three joint chains and group together
-	pm.select('rig_shoulder_jnt', replace=True)
-	pm.select('fk_shoulder_jnt', add=True)
-	pm.select('ik_shoulder_jnt', add=True)
-	pm.group(name='grp_arm')
-
-	# select same joint from each arm and add orient constraint
-	pm.orientConstraint('fk_shoulder_jnt', 'ik_shoulder_jnt', 'rig_shoulder_jnt')
-	#pm.orientConstraint('ik_shoulder_jnt', 'rig_shoulder_jnt')
-
-	pm.orientConstraint('fk_elbow_jnt', 'ik_elbow_jnt', 'rig_elbow_jnt')
-	#pm.orientConstraint('ik_elbow_jnt', 'rig_elbow_jnt')
-
-	pm.orientConstraint('fk_wrist_jnt', 'ik_wrist_jnt', 'rig_wrist_jnt')
-	#pm.orientConstraint('ik_wrist_jnt', 'rig_wrist_jnt')
-
-	# create control hierarchy
-	pm.parent('grp_ctrl_fkWrist', 'ctrl_fkElbow')
-	pm.parent('grp_ctrl_fkElbow', 'ctrl_fkShoulder')
-
-	pm.select(deselect=True)
-
-
-def createPoleVector():
-	# used Lionel Gallat's idea for the pole vector - just converted to python
-	# create pole vector for elbow
-	pm.spaceLocator(name='lctr_PV_arm')
-	posElbow = pm.xform('ik_elbow_jnt', query=True, translation=True, worldSpace=True)
-	pm.xform('lctr_PV_arm', worldSpace=True, translation=posElbow)
-	pm.setAttr('lctr_PV_arm.tz', posElbow[2] - 5)
-
-	# parent pole vector to shoulder
-	#pm.parent('lctr_PV_arm', 'rig_shoulder_jnt')
-	pm.setAttr('lctr_PV_arm.visibility', False)
-
-	# create pole vector control
-	pm.circle(name='ctrl_PV_arm', normal=(0,1,0), radius=1)[0]
-	pm.select('ctrl_PV_arm.ep[2:3]', 'ctrl_PV_arm.ep[5:6]', replace=True)
-	pm.xform(scale=[.318733, 1, 1])
-	pm.select('ctrl_PV_arm.ep[3]', 'ctrl_PV_arm.ep[5]', replace=True)
-	pm.xform(scale=[.400636, 1, 1])
-
-	# move control to locator position
-	temp = pm.pointConstraint('lctr_PV_arm', 'ctrl_PV_arm')
-	pm.delete(temp)
-	pm.makeIdentity('ctrl_PV_arm', apply=True, translate=1, rotate=1, scale=1, normal=0, preserveNormals=1) 
-	pm.delete('lctr_PV_arm')
-	pm.select(deselect=True)
-
-	# constrain the IK handle to the pole vector control
-	pm.poleVectorConstraint('ctrl_PV_arm', 'ikh_arm')
-
-
-createJoint()
-createIK()
-createFK()
-connectJoints()
-createPoleVector
-
-'''
-Issue with the parenting of the shape nodes.  See below
-
-# add IK/FK switch
-# creates text for IK/FK 
-pm.textCurves(name='ctrl_ikHand', font='Courier', text='switch')
-
-# get curves and their shapes
-nurbsShapes = pm.listRelatives(allDescendents=True, noIntermediate=True, type="nurbsCurve", fullPath=True, path=True)
-nurbsTransforms = pm.listRelatives(nurbsShapes, type="transform", parent=True)
-
-# unparent curves and freeze transforms
-pm.select(nurbsTransforms)
-pm.parent(world=True)
-pm.makeIdentity() 
-
-I can't get this portion to work correctly.  Remove and pop give me an attribute error.
-'builtin_function_or_method' object has no attribute '__getitem__' 
-
-What I have now, parents all the curves and all the shapes under the first curve.  I tried
-deleting the curve after I added the shape to the new list, but I could not get that to
-work either.
-
-# remove first shape then parent to first curve
-newShapes = []
-for s in nurbsShapes:
-	if s != 'curve1':
-		newShapes.append(s)
-
-pm.select(newShapes, nurbsTransforms[0], add=True)
-pm.parent(relative=True, shape=True)
-'''
 
 
 
