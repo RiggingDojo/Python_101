@@ -1,193 +1,108 @@
-'''
-Rhonda Ray
-
-Description:
-   Creating IK/FK arm rig
-
-'''
-
-import pymel.core as pm
-import system.ctrl_shapes as cShape
+import maya.cmds as cmds
 import json
+import os
+import system.utils as utils
+reload(utils)
 
-print 'Starting IK-FK Arm Rig...'
+# We can use variables above the class level that can be read on class import
+# This is also known as an attribute of a class
+classname = 'Rig_Arm'
+lytfile = 'arm.json'
+numjnts = 4
 
-class GlobalVars:
+class Rig_Arm:
+    def __init__(self, *args):
+        # Get our joint lists from a json file.
+        print os.environ["RDOJO_DATA"]
+        data_path = os.environ["RDOJO_DATA"] + '/rig/arm.json'
+        # Use our readJson function
+        data = utils.readJson(data_path)
+        # Load the json into a dictionary
+        self.module_info = json.loads( data )
+        """ NOTE: If we wanted to build our arm from some set of joints
+        in the scene, we could overwrite self.module_info['positions']"""
+        # Make a new dictionary to store information about the arm rig.
+        self.rig_info = {}
 
-	rigInfo = json.loads(inputData)
+        # Here we will see if we have a selection to get new positions from.
+        if len(cmds.ls(sl=True, type='joint')) == numjnts :
+            sel=cmds.ls(sl=True, type='joint')
+            positions = []
+            for s in sel:
+                positions.append(cmds.xform(s, q=True, ws=True, t=True))
+            self.rig_info['positions']=positions
 
-'''
-I was thinking I could break out the keys into their separate lists.  Don't know if this would be the way to go or not.
+        else:
+            self.rig_info['positions']=self.module_info['positions']
 
-	for key, value in rigInfo.iteritems():
-		key = {}
-		key = value
-
-rig_data['bodyPlacement'] = ['lt_', 'rt_']
-rig_data['jntType'] = ['ik_', 'fk_', 'rig_', 'bind_']
-rig_data['armJnts']	= ['shoulder_jnt', 'elbow_jnt', 'wrist_jnt', 'wristEND_jnt']
-rig_data['armIKCtrls']	= ['ctrl_ikWrist', 'ikh_arm', 'ctrl_PV_arm', 'ctrl_ikHand']
-rig_data['armFKCtrls']	= ['ctrl_fkShoulder', 'ctrl_fkElbow', 'ctrl_fkWrist']
-rig_data['armGrps'] = ['grp_ctrl_ikWrist', 'grp_ctrl_fkShoulder', 'grp_ctrl_fkElbow', 'grp_ctrl_fkWrist', 'grp_arm']
-rig_data['armPos'] = [[-7, 0, 2], [-1, 0, 0], [4, 0, 2], [7, 0, 3]]
-'''
-
-	
-class RigArm():
-
-	def createRig(self):
-		self.createJoint()
-		self.createIK()
-		self.createFK()
-		self.connectJoints()
-		self.createPoleVector()
-		self.createIKSwitch()
-
-
-	def createJoint(self):
-		armList = {} 
-		armList = GlobalVars.rigInfo['jntType']
-		for key in armList.iteritems():
-			print value
-
-		for item in armList:
-			for jnt in jntList:
-				jntName = item+jnt[0]
-				pm.joint(name=jntName, position=jnt[1], radius=.5)
-
-			pm.select(deselect=True)
+        """ Instead of the else:, we could just return a message that the selection
+        does not meet requirements for an arm. """
 
 
-	def createIK(self):
-		# create IK handle
-		pm.ikHandle(name='ikh_arm', startJoint='ik_shoulder_jnt', endEffector='ik_wrist_jnt', solver='ikRPsolver', priority=2, weight=1)
+        """ What if we want a left and a right arm?  For now we will set
+        a temporary variable to override the name, but later we will build
+        this into the UI """
+        self.instance = '_L_'
 
-		# get world space position of wrist joint
-		posWrist = pm.xform('ik_wrist_jnt', query=True, translation=True, worldSpace=True)
-
-		# create an empty group and orient to wrist
-		pm.group(empty=True, name='grp_ctrl_ikWrist')
-
-		# create square control
-		#TODO: need to get control name - ctrl_ikWrist
-		ctrl_ikWrist = cShape.square(self, ctrlName)
-
-		# parent control to group
-		pm.parent('ctrl_ikWrist', 'grp_ctrl_ikWrist')
-
-		# move the group to the joint
-		pm.xform('grp_ctrl_ikWrist', translation=posWrist, worldSpace=True)
-
-		# parent ik handle to wrist control
-		pm.parent('ikh_arm', 'ctrl_ikWrist')
+        # Run rig_arm function
+        self.rig_arm()
 
 
-	def createFK(self):
-		# get list of selected objects minus the end joint
-		pm.select('fk_shoulder_jnt')
-		selJoints = pm.ls(selection=True, dag=True)
-		selJoints.pop(-1)
+    def rig_arm(self):
+        cmds.select(d=True)
+        # Create Ik joints
+        self.rig_info['ikjnts']=utils.createJoint(self.module_info['ikjnts'], self.rig_info['positions'], self.instance)
 
-		# loop thru the selected joints
-		for jnt in selJoints:
-			# get world space position of the joint
-			posWrist = pm.xform(jnt, query=True, translation=True, worldSpace=True)
+        # Create Fk joints
+        self.rig_info['fkjnts']=utils.createJoint(self.module_info['fkjnts'], self.rig_info['positions'], self.instance)
+ 
+        # Create Rig joints
+        self.rig_info['rigjnts']=utils.createJoint(self.module_info['rigjnts'], self.rig_info['positions'], self.instance)
+        
 
-			# pull out the joint name, upper case the first letter and concatenate to fk
-			jntName = 'fk' + jnt.split('_')[1].title()
+        # Create Ik Rig
+        # Ik handle
+        #"ikcontrols": ["ctrl_ik_arm, ikh_arm", "ctrl_pv_arm"
+        # Generate a name for the ik handle using self.instance
+        ikhname = self.module_info["ikcontrols"][1].replace('_s_', self.instance)
+        self.rig_info['ikh']=cmds.ikHandle(n=ikhname, sj=self.rig_info['ikjnts'][0], ee=self.rig_info['ikjnts'][2], sol='ikRPsolver', p=2, w=1 )
 
-			# create group from joint name
-			grp = pm.group(name='grp_ctrl_' + jntName, empty=True)
+        self.rig_info['ikcontrol']=utils.createControl([[self.rig_info['positions'][2], self.module_info["ikcontrols"][0]]])[0]
 
-			#TODO: add control name - control_jointname
-			ctrl_jnt = cShape.circle(self, ctrlName)
-			
-			# parent control to grp
-			pm.parent(ctrl, grp)
+        pvpos = utils.calculatePVPosition([self.rig_info['ikjnts'][0], self.rig_info['ikjnts'][1], self.rig_info['ikjnts'][2]])
 
-			# move group to joint
-			pm.xform(grp, translation=posWrist, worldSpace=True)
+        self.rig_info['pvcontrol']=utils.createControl([[pvpos, self.module_info["ikcontrols"][2]]])[0]
 
-			# constrain joint to control
-			pm.parentConstraint(ctrl, jnt, maintainOffset=True)
+        # Make a control for arm settings
+        self.rig_info['setcontrol']=utils.createControl([[self.rig_info['positions'][2], 'ctrl_settings']])[0]
+        cmds.addAttr(self.rig_info['setcontrol'][1], ln='IK_FK', at="enum", en="fk:ik:", k=True )
 
+        # Parent ikh to ctrl
+        cmds.parent(self.rig_info['ikh'][0], self.rig_info['ikcontrol'][1])
 
-	def connectJoints(self):
-		# connect IK and FK to rig joints
-		# select all three joint chains and group together
-		pm.select('rig_shoulder_jnt', replace=True)
-		pm.select('fk_shoulder_jnt', add=True)
-		pm.select('ik_shoulder_jnt', add=True)
-		pm.group(name='grp_arm')
+        # PV constraint
+        cmds.poleVectorConstraint(self.rig_info['pvcontrol'][1], self.rig_info['ikh'][0])
+    
+        # orient constrain arm ik_wrist to ctrl_arm
+        cmds.orientConstraint(self.rig_info['ikcontrol'][1], self.rig_info['ikjnts'][2], mo=True)
 
-		# select same joint from each arm and add orient constraint
-		pm.orientConstraint('fk_shoulder_jnt', 'ik_shoulder_jnt', 'rig_shoulder_jnt')
-		pm.orientConstraint('fk_elbow_jnt', 'ik_elbow_jnt', 'rig_elbow_jnt')
-		pm.orientConstraint('fk_wrist_jnt', 'ik_wrist_jnt', 'rig_wrist_jnt')
+        # Create FK rig   
+        self.rig_info['fkcontrols'] = utils.createControl([[self.rig_info['positions'][0], self.module_info["fkcontrols"][0]],
+        [self.rig_info['positions'][1], self.module_info["fkcontrols"][1]],
+        [self.rig_info['positions'][2], self.module_info["fkcontrols"][2]]])
 
-		# create control hierarchy
-		pm.parent('grp_ctrl_fkWrist', 'ctrl_fkElbow')
-		pm.parent('grp_ctrl_fkElbow', 'ctrl_fkShoulder')
+        # Parent fk controls      
+        cmds.parent(self.rig_info['fkcontrols'][2][0], self.rig_info['fkcontrols'][1][1])
+        cmds.parent(self.rig_info['fkcontrols'][1][0], self.rig_info['fkcontrols'][0][1])
 
-		pm.select(deselect=True)
-
-
-	def createPoleVector(self):
-		# used Lionel Gallat's idea for the pole vector - just converted to python
-		# create locator for placement of the pole vector
-		pm.spaceLocator(name='lctr_PV_arm')
-		posElbow = pm.xform('ik_elbow_jnt', query=True, translation=True, worldSpace=True)
-		pm.xform('lctr_PV_arm', worldSpace=True, translation=posElbow)
-		pm.setAttr('lctr_PV_arm.tz', posElbow[2] - 5)
-
-		# set visibility attribute
-		pm.setAttr('lctr_PV_arm.visibility', False)
-
-		# create pole vector control
-		pm.circle(name='ctrl_PV_arm', normal=(0,1,0), radius=1)[0]
-		pm.select('ctrl_PV_arm.ep[2:3]', 'ctrl_PV_arm.ep[5:6]', replace=True)
-		pm.xform(scale=[.318733, 1, 1])
-		pm.select('ctrl_PV_arm.ep[3]', 'ctrl_PV_arm.ep[5]', replace=True)
-		pm.xform(scale=[.400636, 1, 1])
-
-		# move control to locator position
-		temp = pm.pointConstraint('lctr_PV_arm', 'ctrl_PV_arm')
-		pm.delete(temp)
-		pm.makeIdentity('ctrl_PV_arm', apply=True, translate=1, rotate=1, scale=1, normal=0, preserveNormals=1) 
-		pm.delete('lctr_PV_arm')
-		pm.select(deselect=True)
-
-		# constrain the IK handle to the pole vector control
-		pm.poleVectorConstraint('ctrl_PV_arm', 'ikh_arm')
-
-
-	def createIKSwitch(self):
-
-		#TODO: get control name - ctrl_ikHand
-		# creates text for IK/FK 
-		ctrl_ikHand = cShape.text(self, 'switch', ctrlName)
-
-		# rename control
-		newName = ctrl_ikHand[0].strip('Shape')
-		txtCurve = pm.rename(ctrl_ikHand[0], newName, ignoreShape = True)
-		pm.xform(ctrl_ikHand, centerPivots = True)
-
-		# create locator for the IK switch
-		pm.spaceLocator(name='lctr_switch')
-		posEnd = pm.xform('rig_wristEND_jnt', query=True, translation=True, worldSpace=True)
-		pm.xform('lctr_switch', worldSpace=True, translation=posEnd)
-		pm.setAttr('lctr_switch.tx', posEnd[0] + 1.25)
-
-		# move control to locator position
-		temp = pm.pointConstraint('lctr_switch', ctrl_ikHand)
-		pm.delete(temp)
-		pm.xform(ctrl_ikHand, worldSpace=True, rotation=(0,-90,0), scale=(.5,.5,.5))
-		pm.makeIdentity(ctrl_ikHand, apply=True, translate=1, rotate=1, scale=1, normal=0, preserveNormals=1) 
-		pm.delete('lctr_switch')
-
-		pm.select(deselect=True)
+        # Connect Ik and Fk to Rig joints
+        switchattr = self.rig_info['setcontrol'][1] + '.IK_FK'
+        utils.connectThroughBC(self.rig_info['ikjnts'], self.rig_info['fkjnts'], self.rig_info['rigjnts'], self.instance, switchattr )
+  
+        # Constrain fk joints to controls.
+        [cmds.parentConstraint(self.rig_info['fkcontrols'][i][1], self.rig_info['fkjnts'][i]) for i in range(len(self.rig_info['fkcontrols']))]
 
 
 
 
-print 'end of script'
+

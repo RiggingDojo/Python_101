@@ -13,7 +13,7 @@ cmds.currentUnit( time='ntsc' )
 cmds.currentUnit( linear='cm' )
 
 # Set a system path to files.  We can do this with the os module
-os.environ["RDOJO_DATA"] = 'C:/Users/Griffy/Documents/GitHub/Python_101_S2_2015/'
+os.environ["RDOJO_DATA"] = os.environ['RIGGING_TOOL'] + '/data'
 
 import ui.ui as ui
 reload(ui)
