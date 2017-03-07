@@ -10,32 +10,17 @@ reload(utils)
 # We can use variables above the class level that can be read on class import
 # This is also known as an attribute of a class
 
-CLASSNAME = 'Rig_Arm'
-TITLE = 'Arm'
-DATAPATH = os.environ["RDOJO_DATA"] + '/rig/arm.json'
+CLASSNAME = 'Rig_Leg'
+TITLE = 'Leg'
+DATAPATH = os.environ["RDOJO_DATA"] + '/rig/leg.json'
 
-class Rig_Arm(rig_hinge.Rig_Hinge):
+class Rig_Leg(rig_hinge.Rig_Hinge):
     def __init__(self, *args):
-        print "Arm"
+        print "Leg"
 
-        self.numjnts = 4
+        self.numjnts = 6
 
     def install(self, uiinfo, datapath):
         self.rig_info = self.collectRigData(datapath, self.numjnts)
         hinge=rig_hinge.Rig_Hinge()
         hinge.install(uiinfo, datapath)
-
-    def layout(self):
-        return
-
-    def ui(self):
-        return
-
-
-
-
-
-
-
-
-
