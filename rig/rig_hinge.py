@@ -39,3 +39,8 @@ class Rig_Hinge(rig.Rig):
 
         # connect joint chains
         self.connectThroughBC(self.rig_info['ikjnts'], self.rig_info['fkjnts'], self.rig_info['rigjnts'], None, '_01')
+
+
+    def layout(self, uiinfo, datapath):
+        self.rig_info = self.collectRigData(datapath, self.numjnts)
+        self.createLayout(self.module_info["rootname"], self.numjnts)

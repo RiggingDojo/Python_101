@@ -34,6 +34,8 @@ class Rig(object):
         else:
             self.rig_info['positions'] = self.module_info['positions']
 
+        #self.rig_info['rootname'] = self.module_info['rootname']
+
         """ Instead of the else:, we could just return a message that the selection
                does not meet requirements for an arm. """
 
@@ -74,7 +76,6 @@ class Rig(object):
 
     def connectThroughBC(self, parentsA, parentsB, children, switchattr, instance, *args):
         print (parentsA, parentsB, children, instance, switchattr)
-        print args
         constraints = []
         for j in range(len(children)):
             switchPrefix = children[j].partition('_')[2]
@@ -101,3 +102,19 @@ class Rig(object):
             cmds.connectAttr(bcNodeR + '.output', children[j] + '.rotate')
             cmds.connectAttr(bcNodeS + '.output', children[j] + '.scale')
         return constraints
+
+    def createLayout(self, rootname, numjnts):
+        lytpath = os.environ["RIGGING_TOOL"] + '/layout/layout_chain.ma'
+
+        cmds.namespace(set=':')
+        for n in range(numjnts -1):
+            fileinfo = cmds.file(lytpath, i=True, ns=rootname + str(n), rnn=True)
+            cmds.namespace(set=':')
+            assetroot = rootname + str(n) + ':lyt_main_GRP_AST'
+            cmds.xform(assetroot, ws=True, t=self.rig_info['positions'][n])
+
+            lytend = rootname + str(n) + ':lyt_end_CTRL'
+            cmds.xform(lytend, ws=True, t=self.rig_info['positions'][n+1])
+
+
+

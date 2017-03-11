@@ -69,6 +69,10 @@ class RDojo_UI:
         self.UIElements["rigbutton"] = cmds.button(label="Rig", width=buttonWidth, height=buttonHeight,
                                     bgc=[0.2, 0.4, 0.2], p=self.UIElements["guiFlowLayout1"], c=self.rigmod)
 
+        cmds.separator(w=10, hr=True, st='none', p=self.UIElements["guiFlowLayout1"])
+        self.UIElements["layoutbutton"] = cmds.button(label="Layout", width=buttonWidth, height=buttonHeight,
+                                                   bgc=[0.2, 0.4, 0.2], p=self.UIElements["guiFlowLayout1"],
+                                                   c=self.layout)
 
         """ Show the window"""
         cmds.showWindow(windowName)
@@ -90,3 +94,18 @@ class RDojo_UI:
         datapath = mod.DATAPATH
         moduleInstance = moduleClass()
         moduleInstance.install(self.uiinfo[0], datapath)
+
+    def layout(self, *args):
+        modfile = cmds.optionMenu(self.UIElements["rigMenu"], q=True, v=True)
+        mod = __import__("rig." + modfile, {}, {}, [modfile])
+        reload(mod)
+
+        sideval = cmds.optionMenu(self.UIElements["sideMenu"], q=True, v=True)
+        self.uiinfo.append([sideval, modfile])
+
+        # getattr will get an attribute from a class
+        moduleClass = getattr(mod, mod.CLASSNAME)
+
+        datapath = mod.DATAPATH
+        moduleInstance = moduleClass()
+        moduleInstance.layout(self.uiinfo[0], datapath)
