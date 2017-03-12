@@ -15,12 +15,21 @@ TITLE = 'Leg'
 DATAPATH = os.environ["RDOJO_DATA"] + '/rig/leg.json'
 
 class Rig_Leg(rig_hinge.Rig_Hinge):
-    def __init__(self, *args):
+    def __init__(self, uiinfo, datapath, *args):
         print "Leg"
 
         self.numjnts = 6
+        rig_hinge.Rig_Hinge.__init__(self, uiinfo, datapath, self.numjnts)
 
-    def install(self, uiinfo, datapath):
-        self.rig_info = self.collectRigData(datapath, self.numjnts)
-        hinge=rig_hinge.Rig_Hinge()
-        hinge.install(uiinfo, datapath)
+    def install(self):
+        rig_hinge.Rig_Hinge.install(self)
+
+    def layout(self):
+        rig_hinge.Rig_Hinge.layout(self)
+
+    def ui(self):
+        print "Leg UI"
+        uielements = []
+        cb = cmds.checkBox(label='mirror')
+        return ([cb, 'hinge_mirror_cb'])
+

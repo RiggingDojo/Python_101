@@ -21,6 +21,10 @@ class RDojo_UI:
         This will allow us to access these elements later. """
         self.UIElements = {}
 
+        """ Create a modinfo dictionary to store details
+        about the currently loaded module. """
+        self.ModInfo = {}
+
         # This dictionary will store all of the available rigging modules.
         self.rigmodlst = []
         rigcontents = os.listdir(os.environ["RIGGING_TOOL"]+ '/rig/')
@@ -29,7 +33,7 @@ class RDojo_UI:
                 self.rigmodlst.append(mod)
 
         # An empty list to store information collected from the ui.
-        self.uiinfo = [] 
+        self.uiinfo = {}
 
     def ui(self, *args):
         """ Check to see if the UI exists """
@@ -49,12 +53,12 @@ class RDojo_UI:
         self.UIElements["guiFlowLayout1"] = cmds.flowLayout(v=False, width=windowWidth, height=windowHeight/2, wr=False, bgc=[0.2, 0.2, 0.2], p=self.UIElements["guiFrameLayout1"])
         
         cmds.separator(w=10, hr=True, st='none', p=self.UIElements["guiFlowLayout1"])
-        self.UIElements["rigMenu"] = cmds.optionMenu('Rig_Install', label='Rig', p= self.UIElements["guiFlowLayout1"]) 
+        self.UIElements["rigMenu"] = cmds.optionMenu('Rig_Install', label='Rig', p= self.UIElements["guiFlowLayout1"], cc=self.updateUi)
         
         # Dynamically make a menu item for each rigging module.
         for mod in self.rigmodlst:
             itemname = mod.replace('.py', '')    
-            cmds.menuItem(label=itemname, p=self.UIElements["rigMenu"], c=partial(self.rigmod, itemname))
+            cmds.menuItem(label=itemname, p=self.UIElements["rigMenu"])
 
         cmds.separator(w=10, hr=True, st='none', p=self.UIElements["guiFlowLayout1"])
         # Make a menu for left, right and center sides.
@@ -62,12 +66,15 @@ class RDojo_UI:
         sides = ['_L_', '_R_', '_C_']
         self.UIElements["sideMenu"] = cmds.optionMenu('Side', label='side', p=self.UIElements["guiFlowLayout1"]) 
         for s in sides:
-            cmds.menuItem(label=s, p=self.UIElements["sideMenu"])    
+            cmds.menuItem(label=s, p=self.UIElements["sideMenu"])
+
+        cmds.separator(w=10, hr=True, st='none', p=self.UIElements["guiFlowLayout1"])
+        self.updateUi()
 
         # Make a button to run the rig script
         cmds.separator(w=10, hr=True, st='none', p=self.UIElements["guiFlowLayout1"])
         self.UIElements["rigbutton"] = cmds.button(label="Rig", width=buttonWidth, height=buttonHeight,
-                                    bgc=[0.2, 0.4, 0.2], p=self.UIElements["guiFlowLayout1"], c=self.rigmod)
+                                    bgc=[0.2, 0.4, 0.2], p=self.UIElements["guiFlowLayout1"], c=partial(self.rigmod, itemname))
 
         cmds.separator(w=10, hr=True, st='none', p=self.UIElements["guiFlowLayout1"])
         self.UIElements["layoutbutton"] = cmds.button(label="Layout", width=buttonWidth, height=buttonHeight,
@@ -77,35 +84,64 @@ class RDojo_UI:
         """ Show the window"""
         cmds.showWindow(windowName)
 
-        
-    def rigmod(self, *args):
-        modfile = cmds.optionMenu(self.UIElements["rigMenu"], q=True, v=True)
-        """__import__ basically opens a module and reads some info from it 
-            without actually loading the module in memory."""
-        mod = __import__("rig."+modfile, {}, {}, [modfile])
+    def updateUi(self, *args):
+        # Load mod specific ui
+        self.loadModUi()
+
+        self.uiinfo['modfile'] = cmds.optionMenu(self.UIElements["rigMenu"], q=True, v=True)
+        mod = __import__("rig." + self.uiinfo['modfile'], {}, {}, [self.uiinfo['modfile']])
         reload(mod)
 
-        sideval = cmds.optionMenu(self.UIElements["sideMenu"], q=True, v=True) 
-        self.uiinfo.append([sideval, modfile]) 
+        self.uiinfo['side'] = cmds.optionMenu(self.UIElements["sideMenu"], q=True, v=True)
+
+        moduleClass = getattr(mod, mod.CLASSNAME)
+        datapath = mod.DATAPATH
+
+        moduleInstance = moduleClass(self.uiinfo, datapath)
+
+    def loadModUi(self):
+        self.uiinfo['modfile'] = cmds.optionMenu(self.UIElements["rigMenu"], q=True, v=True)
+        mod = __import__("rig." + self.uiinfo['modfile'], {}, {}, [self.uiinfo['modfile']])
+        reload(mod)
+
+        self.uiinfo['side'] = cmds.optionMenu(self.UIElements["sideMenu"], q=True, v=True)
+
+        moduleClass = getattr(mod, mod.CLASSNAME)
+        datapath = mod.DATAPATH
+
+        moduleInstance = moduleClass(self.uiinfo, datapath)
+        modui = moduleInstance.ui()
+
+        if modui:
+            for item in modui:
+                self.UIElements[item[1]] = item[0]
+
+
+
+    def rigmod(self, *args):
+        self.uiinfo['modfile'] = cmds.optionMenu(self.UIElements["rigMenu"], q=True, v=True)
+        mod = __import__("rig."+self.uiinfo['modfile'], {}, {}, [self.uiinfo['modfile']])
+        reload(mod)
+
+        self.uiinfo['side'] = cmds.optionMenu(self.UIElements["sideMenu"], q=True, v=True)
 
         # getattr will get an attribute from a class
         moduleClass = getattr(mod, mod.CLASSNAME)
         title = mod.TITLE
         datapath = mod.DATAPATH
-        moduleInstance = moduleClass()
-        moduleInstance.install(self.uiinfo[0], datapath)
+        moduleInstance = moduleClass(self.uiinfo, datapath)
+        moduleInstance.install()
 
     def layout(self, *args):
-        modfile = cmds.optionMenu(self.UIElements["rigMenu"], q=True, v=True)
-        mod = __import__("rig." + modfile, {}, {}, [modfile])
+        self.uiinfo['modfile'] = cmds.optionMenu(self.UIElements["rigMenu"], q=True, v=True)
+        mod = __import__("rig." + self.uiinfo['modfile'], {}, {}, [self.uiinfo['modfile']])
         reload(mod)
 
-        sideval = cmds.optionMenu(self.UIElements["sideMenu"], q=True, v=True)
-        self.uiinfo.append([sideval, modfile])
+        self.uiinfo['side'] = cmds.optionMenu(self.UIElements["sideMenu"], q=True, v=True)
 
         # getattr will get an attribute from a class
         moduleClass = getattr(mod, mod.CLASSNAME)
 
         datapath = mod.DATAPATH
-        moduleInstance = moduleClass()
-        moduleInstance.layout(self.uiinfo[0], datapath)
+        moduleInstance = moduleClass(self.uiinfo, datapath)
+        moduleInstance.layout()

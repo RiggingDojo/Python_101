@@ -1,4 +1,5 @@
 import maya.cmds as cmds
+from pymel.core import *
 import json
 import tempfile
 
@@ -81,3 +82,23 @@ def connectThroughBC(parentsA, parentsB, children, instance, switchattr ):
         cmds.connectAttr(bcNodeR + '.output', children[j] + '.rotate')
         cmds.connectAttr(bcNodeS + '.output', children[j] + '.scale')
     return constraints
+
+
+def findHighestTrailingNumber(names, basename):
+    import re
+    highestValue = 0
+
+    for n in names:
+        if objExists(n) == True:
+            n = str(n)
+            if n.find(basename) >= 0:
+                suffix = n.partition(basename)[2][0]
+
+                if re.match("^[0-9]*$", suffix):
+                    numericalElement = int(suffix)
+
+                    if numericalElement >= highestValue:
+                        highestValue = numericalElement + 1
+        else:
+            highestValue = 1
+    return highestValue

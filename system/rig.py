@@ -5,11 +5,50 @@ import system.utils as utils
 reload(utils)
 
 
-class Rig(object):
-    def __init__(self):
-        print "Rig init"
+class Rig():
+    def __init__(self, uiinfo, datapath, numjnts):
+        self.rig_info = self.collectRigData(uiinfo, datapath, numjnts)
+        self.numjnts = numjnts
 
-    def collectRigData(self, data_path, numjnts):
+        # Create a master asset
+        if cmds.objExists == True:
+            self.rig_info['mainasset'] = self.module_info['rootname'] + self.rig_info['instance'] + 'ASSET'
+        else:
+            self.rig_info['mainasset'] = cmds.container(
+                n=self.module_info['rootname'] + self.rig_info['instance'] + 'ASSET')
+
+
+        #cmds.addAttr(self.rig_info['mainasset'], sn=)
+
+    def install(self):
+        print 'In Rig Install'
+
+        return
+
+    def layout(self):
+        lytpath = os.environ["RIGGING_TOOL"] + '/layout/layout_chain.ma'
+
+        cmds.namespace(set=':')
+        for n in range(self.numjnts - 1):
+            fileinfo = cmds.file(lytpath, i=True, ns=self.module_info['rootname'] + self.rig_info['instance'] + str(n), rnn=True)
+            cmds.namespace(set=':')
+            assetroot = self.module_info['rootname'] + self.rig_info['instance'] + str(n) + ':lyt_main_GRP_AST'
+            cmds.xform(assetroot, ws=True, t=self.rig_info['positions'][n])
+
+            lytend = self.module_info['rootname'] + self.rig_info['instance'] + str(n) + ':lyt_end_CTRL'
+            cmds.xform(lytend, ws=True, t=self.rig_info['positions'][n + 1])
+
+            for node in fileinfo:
+                try:
+                    cmds.container(self.rig_info['mainasset'], edit=True, an=node)
+                except: pass
+
+        return
+
+    def ui(self):
+        return
+
+    def collectRigData(self, uiinfo, data_path, numjnts):
         self.rig_info = {}
 
         # Use our readJson function
@@ -35,14 +74,19 @@ class Rig(object):
             self.rig_info['positions'] = self.module_info['positions']
 
         #self.rig_info['rootname'] = self.module_info['rootname']
+        #find all part of type in the scene.  Make this cleaner once we use assets
+        assetlist = cmds.ls(type='container')
 
-        """ Instead of the else:, we could just return a message that the selection
-               does not meet requirements for an arm. """
+        partlist = []
+        for a in assetlist:
+            if a.endswith('ASSET'):
+                partlist.append(a)
 
-        """ What if we want a left and a right arm?  For now we will set
-        a temporary variable to override the name, but later we will build
-        this into the UI """
-        self.instance = '_L_'
+        # Find the instance of the object
+        self.rig_info['partnum'] = 1
+        self.rig_info['partnum'] = str(utils.findHighestTrailingNumber(partlist, self.module_info['rootname'] + uiinfo['side']))
+
+        self.rig_info['instance'] = uiinfo['side'] + self.rig_info['partnum'] + '_'
 
         return self.rig_info
 
@@ -75,11 +119,10 @@ class Rig(object):
         return (control_info)
 
     def connectThroughBC(self, parentsA, parentsB, children, switchattr, instance, *args):
-        print (parentsA, parentsB, children, instance, switchattr)
         constraints = []
         for j in range(len(children)):
-            switchPrefix = children[j].partition('_')[2]
-            bcNodeT = cmds.shadingNode("blendColors", asUtility=True, n='bcNodeT_switch_' + switchPrefix)
+            switchPrefix = children[j].partition('_')[0]
+            bcNodeT = cmds.shadingNode("blendColors", asUtility=True, n='bcNodeT_switch_' + self.rig_info['instance'] + switchPrefix)
             if switchattr:
                 cmds.connectAttr(switchattr, bcNodeT + '.blender')
             bcNodeR = cmds.shadingNode("blendColors", asUtility=True, n='bcNodeR_switch_' + switchPrefix)
@@ -103,18 +146,6 @@ class Rig(object):
             cmds.connectAttr(bcNodeS + '.output', children[j] + '.scale')
         return constraints
 
-    def createLayout(self, rootname, numjnts):
-        lytpath = os.environ["RIGGING_TOOL"] + '/layout/layout_chain.ma'
-
-        cmds.namespace(set=':')
-        for n in range(numjnts -1):
-            fileinfo = cmds.file(lytpath, i=True, ns=rootname + str(n), rnn=True)
-            cmds.namespace(set=':')
-            assetroot = rootname + str(n) + ':lyt_main_GRP_AST'
-            cmds.xform(assetroot, ws=True, t=self.rig_info['positions'][n])
-
-            lytend = rootname + str(n) + ':lyt_end_CTRL'
-            cmds.xform(lytend, ws=True, t=self.rig_info['positions'][n+1])
 
 
 

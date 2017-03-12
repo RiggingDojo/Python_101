@@ -2,9 +2,9 @@ import maya.cmds as cmds
 import json
 import os
 import rig_hinge as rig_hinge
-
 import system.utils as utils
 reload(utils)
+reload(rig_hinge)
 
 
 # We can use variables above the class level that can be read on class import
@@ -15,21 +15,23 @@ TITLE = 'Arm'
 DATAPATH = os.environ["RDOJO_DATA"] + '/rig/arm.json'
 
 class Rig_Arm(rig_hinge.Rig_Hinge):
-    def __init__(self, *args):
+    def __init__(self, uiinfo, datapath, *args):
         print "Arm"
 
         self.numjnts = 4
+        rig_hinge.Rig_Hinge.__init__(self, uiinfo, datapath, self.numjnts)
 
-    def install(self, uiinfo, datapath):
-        self.rig_info = self.collectRigData(datapath, self.numjnts)
-        hinge=rig_hinge.Rig_Hinge()
-        hinge.install(uiinfo, datapath)
+    def install(self):
+        rig_hinge.Rig_Hinge.install(self)
 
     def layout(self):
-        return
+        rig_hinge.Rig_Hinge.layout(self)
 
     def ui(self):
-        return
+        print "arm ui"
+        uielements = []
+        cb = cmds.checkBox(label='mirror')
+        return ([cb, 'hinge_mirror_cb'])
 
 
 
