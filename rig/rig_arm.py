@@ -15,23 +15,23 @@ TITLE = 'Arm'
 DATAPATH = os.environ["RDOJO_DATA"] + '/rig/arm.json'
 
 class Rig_Arm(rig_hinge.Rig_Hinge):
-    def __init__(self, uiinfo, datapath, *args):
+    def __init__(self, uiinfo, *args):
         print "Arm"
-
+        self.datapath = os.environ["RDOJO_DATA"] + '/rig/arm.json'
         self.numjnts = 4
-        rig_hinge.Rig_Hinge.__init__(self, uiinfo, datapath, self.numjnts)
+        rig_hinge.Rig_Hinge.__init__(self, uiinfo, self.numjnts)
 
     def install(self):
         rig_hinge.Rig_Hinge.install(self)
 
     def layout(self):
-        rig_hinge.Rig_Hinge.layout(self)
+        m = rig_hinge.Rig_Hinge.layout(self)
 
-    def ui(self):
+    def ui(self, parentlyt):
         print "arm ui"
         uielements = []
-        cb = cmds.checkBox(label='mirror')
-        return ([cb, 'hinge_mirror_cb'])
+        cb = cmds.checkBox(label='mirror arm', p=parentlyt)
+        return ([[cb, 'mirror_cb']])
 
 
 
