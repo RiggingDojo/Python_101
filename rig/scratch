@@ -1,8 +1,0 @@
-Design and purpose
-Want several rigging modules
-The modules should be UI independent
-Easily extended
-Easily updated
-Layout to create the rig
-Rig modules options and UI
-Attach script to maya rig objects
