@@ -65,10 +65,11 @@ arm_orientJoint("FK_rt_wrist_JNT","FK_rt_wristEnd_JNT", vecList[1], vecList[3])
 
 ########################################################################################################################
 # I don't know I tried to write function , but it doesn't work.
-for allJnt in LfArmJntList:
-     if LfArmJntList == "*wrist*":
-          cmds.setAttr(LfArmJntList.jointOrientX, 0)
-     else cmds.setAttr(LfArmJntList.jointOrientX, 0) and cmds.setAttr(LfArmJntList.jointOrientY, 0)
+def cleanJntOrient(side):
+     for allJnt in range(len(jntList)):
+          if jntList == "*wrist*":
+               cmds.setAttr(jntList.jointOrientX, 0)
+          else cmds.setAttr(jntList.jointOrientX, 0) and cmds.setAttr(jntList.jointOrientY, 0)
 
 
 #Making sure that bind arm is straight for IK to work properly 
