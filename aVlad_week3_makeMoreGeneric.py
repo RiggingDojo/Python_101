@@ -70,7 +70,7 @@ def cleanJntOrient(side):
           if jntList == "*wrist*":
                cmds.setAttr(jntList.jointOrientX, 0)
           else cmds.setAttr(jntList.jointOrientX, 0) and cmds.setAttr(jntList.jointOrientY, 0)
-
+ 
 
 #Making sure that bind arm is straight for IK to work properly 
 cmds.setAttr("bn_lf_elbow_JNT.jointOrientX", 0)
