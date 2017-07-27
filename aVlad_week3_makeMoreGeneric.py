@@ -9,11 +9,25 @@ RtArmJntList = [["rt_shoulder_JNT", [-9.58574, 118.83508, -0.70541]],
 ["rt_elbow_JNT", [-23.075005157215955, 101.68192524537305, -3.012311]], 
 ["rt_wrist_JNT", [-37.7333821711548, 83.04211007076694, -0.7054100000000001]], 
 ["rt_wristEnd_JNT",[-59.84439, 61.86297, 1.30086]]]
+# I don't know I tried to write function , but it doesn't work.
+"""
+The variable jntList isn't defined within the cleanJntOrient function.
+You need to pass the jntList as an argument but jntList is rebuilt every time you define it above.
+You could call the cleanJntOrient function within the createJnt function.
+"""
+def cleanJntOrient(side, jntList):
+     for allJnt in range(len(jntList)):
+          if jntList == "*wrist*":
+               cmds.setAttr(jntList.jointOrientX, 0)
+          else: cmds.setAttr(jntList.jointOrientX, 0) and cmds.setAttr(jntList.jointOrientY, 0)
 
 def create_arm_jnt(side, jntList):
     for i in range(len(jntList)):
         cmds.joint(n=side+jntList[i][0],p=jntList[i][1])
         cmds.select(d=True)
+
+        # Ryan added this
+        cleanJntOrient(jntList)
 
 create_arm_jnt('IK_', LfArmJntList)
 create_arm_jnt('FK_', LfArmJntList)
@@ -31,7 +45,7 @@ def arm_orientJoint(orntJnt, aimJnt, aimVec, upVec):
      cmds.parent("locator1", orntJnt)
      cmds.setAttr("locator1.translate", 0, 0, 5, type = "double3")
      cmds.parent("locator1", w=True)
-     cmds.aimConstraint(aimJnt, orntJnt, offset = [0, 0, 0], weight = True, aimVector = aimVec , 
+     cmds.aimConstraint(aimJnt, orntJnt, offset = [0, 0, 0], weight = True, aimVector = aimVec ,
                                              upVector = upVec, worldUpType = "object" , worldUpObject = "locator1")
      cmds.delete(orntJnt+"_aimConstraint1")
      cmds.makeIdentity(orntJnt, apply = True, t = 0,  r = 1, s = 0, n = 0, pn = True)
@@ -64,12 +78,7 @@ arm_orientJoint("FK_rt_elbow_JNT","FK_rt_wrist_JNT", vecList[1], vecList[3])
 arm_orientJoint("FK_rt_wrist_JNT","FK_rt_wristEnd_JNT", vecList[1], vecList[3])
 
 ########################################################################################################################
-# I don't know I tried to write function , but it doesn't work.
-def cleanJntOrient(side):
-     for allJnt in range(len(jntList)):
-          if jntList == "*wrist*":
-               cmds.setAttr(jntList.jointOrientX, 0)
-          else cmds.setAttr(jntList.jointOrientX, 0) and cmds.setAttr(jntList.jointOrientY, 0)
+
  
 
 #Making sure that bind arm is straight for IK to work properly 
