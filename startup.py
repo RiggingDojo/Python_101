@@ -1,3 +1,3 @@
 print "startup"
 
-import ui.ui as ui
+import awesome_UI.ui as ui
