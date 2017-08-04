@@ -13,55 +13,71 @@ jntDict = {"leftArm" : [
 ["rt_wristEnd_JNT",[-59.84439, 61.86297, 1.30086]]
 ]}
 #IK Ctrl List
-lf_IKctrlList = [jntDict["leftArm"][2][1], "IK_lf_arm_CTRL", "IK_lf_arm_CTRL_GRP"]
-rt_IKctrlList = [jntDict["rightArm"][2][1], "IK_rt_arm_CTRL", "IK_rt_arm_CTRL_GRP"]
+lf_IKctrlList = [[jntDict["leftArm"][2][1], "IK_lf_arm_CTRL", "IK_lf_arm_CTRL_GRP"]]
+rt_IKctrlList = [[jntDict["rightArm"][2][1], "IK_rt_arm_CTRL", "IK_rt_arm_CTRL_GRP"]]
 
-#Building joints___Function
-def create_arm_jnt(jntType):
-    for jnt in jntDict:
-        for joint in jntDict[jnt]:
-            cmds.joint(n=jntType+joint[0],p=joint[1])
-            cmds.select(d=True)
-            
-#Orient Joints____Function
-def arm_orientJoint(orntJnt, aimJnt, aimVec, upVec):
-     loc = cmds.spaceLocator()
-     cmds.parent(loc[0], orntJnt)
-     cmds.setAttr(loc[0]+".translate", 0, 0, 5, type = "double3")
-     cmds.parent(loc[0], w=True)
-     cmds.aimConstraint(aimJnt, orntJnt, offset = [0, 0, 0], weight = True, aimVector = aimVec ,
-                                             upVector = upVec, worldUpType = "object" , worldUpObject = loc[0])
-     cmds.delete(orntJnt+"_aimConstraint1")
-     cmds.makeIdentity(orntJnt, apply = True, t = 0,  r = 1, s = 0, n = 0, pn = True)
-     cmds.delete(loc[0])
-     cmds.parent(aimJnt, orntJnt)
-     
-vecList = ([1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0])     
+#FK Ctrl List
+lf_FKctrlList = [
+[jntDict["leftArm"][0][1], "FK_lf_shoulder_CTRL", "FK_lf_shoulder_CTRL_GRP"],
+[jntDict["leftArm"][1][1], "FK_lf_elbow_CTRL", "FK_lf_elbow_CTRL_GRP"],
+[jntDict["leftArm"][2][1], "FK_lf_wrist_CTRL", "FK_lf_wrist_CTRL_GRP"]]
+rt_FKctrlList = [
+[jntDict["rightArm"][0][1], "FK_rt_shoulder_CTRL", "FK_rt_shoulder_CTRL_GRP"],
+[jntDict["rightArm"][1][1], "FK_rt_elbow_CTRL", "FK_rt_elbow_CTRL_GRP"],
+[jntDict["rightArm"][2][1], "FK_rt_wrist_CTRL", "FK_rt_wrist_CTRL_GRP"]]
 
-#Cleaning up joint orinet___Function    
-def cleanJntOrient(jntType, side):
-    for i in range(len(jntDict[side])):
-        if jntDict[side][i][0] == jntDict[side][0][0]:
-            pass
-        elif jntDict[side][i][0] == jntDict[side][3][0]:
-            cmds.setAttr(jntType + jntDict[side][i][0] +".jointOrient", 0, 0, 0, type = "double3")
-        elif jntDict[side][i][0] == jntDict[side][2][0]:
-            cmds.setAttr(jntType + jntDict[side][i][0] +'.jointOrientX', 0)    
-        else:
-            cmds.setAttr(jntType + jntDict[side][i][0] +".jointOrientX", 0)
-            cmds.setAttr(jntType + jntDict[side][i][0] +".jointOrientY", 0)
+class Rig_Arm:
+    def rig_arm(self):
 
-#Making Controls___Function
-def ctrlMaking(ctrlinfo):
-    for info in ctrlinfo:
-        pos = info[0]
-        ctrlGRP = cmds.group(em = True, name = info[2])
-        ctrl = cmds.circle(n=info[1], nr=(0, 0, 1), c=(0, 0, 0))
-        cmds.parent(ctrl, ctrlGRP)
-        cmds.xform(ctrlGRP, t=pos, ws =True)
+    #Building joints___Function
+    def create_arm_jnt(jntType):
+        for jnt in jntDict:
+            for joint in jntDict[jnt]:
+                cmds.joint(n=jntType+joint[0],p=joint[1])
+                cmds.select(d=True)
+                
+    #Orient Joints____Function
+    def arm_orientJoint(orntJnt, aimJnt, aimVec, upVec):
+         loc = cmds.spaceLocator()
+         cmds.parent(loc[0], orntJnt)
+         cmds.setAttr(loc[0]+".translate", 0, 0, 5, type = "double3")
+         cmds.parent(loc[0], w=True)
+         cmds.aimConstraint(aimJnt, orntJnt, offset = [0, 0, 0], weight = True, aimVector = aimVec ,
+                                                 upVector = upVec, worldUpType = "object" , worldUpObject = loc[0])
+         cmds.delete(orntJnt+"_aimConstraint1")
+         cmds.makeIdentity(orntJnt, apply = True, t = 0,  r = 1, s = 0, n = 0, pn = True)
+         cmds.delete(loc[0])
+         cmds.parent(aimJnt, orntJnt)
+         
+    vecList = ([1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0])     
+
+    #Cleaning up joint orinet___Function    
+    def cleanJntOrient(jntType, side):
+        for i in range(len(jntDict[side])):
+            if jntDict[side][i][0] == jntDict[side][0][0]:
+                pass
+            elif jntDict[side][i][0] == jntDict[side][3][0]:
+                cmds.setAttr(jntType + jntDict[side][i][0] +".jointOrient", 0, 0, 0, type = "double3")
+            elif jntDict[side][i][0] == jntDict[side][2][0]:
+                cmds.setAttr(jntType + jntDict[side][i][0] +'.jointOrientX', 0)    
+            else:
+                cmds.setAttr(jntType + jntDict[side][i][0] +".jointOrientX", 0)
+                cmds.setAttr(jntType + jntDict[side][i][0] +".jointOrientY", 0)
+
+    #Making Controls___Function
+    def ctrlCircle(ctrlinfo, ctrlNormal):
+        for info in range(len(ctrlinfo)):
+            pos = ctrlinfo[info][0]
+            ctrlGRP = cmds.group(em = True, name = ctrlinfo[info][2])
+            if ctrlinfo[info][1] == ctrlinfo[0][1]:
+                ctrl = cmds.circle(n=ctrlinfo[info][1], r = 6, nr= (40, 0, 0), c=(0, 0, 0))
+            else:
+                ctrl = cmds.circle(n=ctrlinfo[info][1], r = 4, nr= ctrlNormal, c=(0, 0, 0))
+            cmds.parent(ctrl, ctrlGRP)
+            cmds.xform(ctrlGRP, t=pos, ws = True)
 
 
-
+ 
 #Building joints
 create_arm_jnt("IK_")
 create_arm_jnt("FK_")
@@ -111,4 +127,5 @@ cmds.makeIdentity(rt_IKH[0], apply = True, t = 0,  r = 1, s = 0, n = 0, pn = Tru
 cmds.parent(lf_IKH[0], w = True)
 cmds.parent(rt_IKH[0], w = True)
 
-ctrlMaking(lf_IKctrlList)
+ctrlCircle(lf_IKctrlList, (40, -50, 0))
+ctrlCircle(rt_IKctrlList, (40, 50, 0))
