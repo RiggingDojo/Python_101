@@ -16,5 +16,5 @@ cmds.currentUnit( linear='cm' )
 os.environ["RDOJO_DATA"] = os.environ['RIGGING_TOOL'] + '/data'
 
 import ui.ui as ui
-reload(ui)
+#reload(ui)
 ui.RDojo_UI()
