@@ -17,8 +17,6 @@ cmds.currentUnit( linear='cm' )
 
 import ui.ui as ui
 #reload(ui)
-<<<<<<< HEAD
-ui.RDojo_UI()
-=======
-ui.RDojo_UI()
->>>>>>> d1836a3bd3c8fb31fef81ae6556625de0a54dbd8
+#ui.RDojo_UI()
+
+
