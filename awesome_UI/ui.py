@@ -3,7 +3,7 @@ import maya.cmds as cmds
 print "ui"
 
 def rigarm(*args):
-	print "Rig_Arm"
+	print "rig_arm"
 	import rig.rig_arm as rig_arm
 	print rig_arm
 	reload(rig_arm)

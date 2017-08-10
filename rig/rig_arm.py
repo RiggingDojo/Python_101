@@ -28,15 +28,16 @@ rt_FKctrlList = [
 
 class Rig_Arm:
     def rig_arm(self):
+
     #Building joints___Function
-    def create_arm_jnt(self, jntType):
+    def create_arm_jnt(jntType):
         for jnt in jntDict:
             for joint in jntDict[jnt]:
                 cmds.joint(n=jntType+joint[0],p=joint[1])
                 cmds.select(d=True)
                 
     #Orient Joints____Function
-    def arm_orientJoint(self, orntJnt, aimJnt, aimVec, upVec):
+    def arm_orientJoint(orntJnt, aimJnt, aimVec, upVec):
          loc = cmds.spaceLocator()
          cmds.parent(loc[0], orntJnt)
          cmds.setAttr(loc[0]+".translate", 0, 0, 5, type = "double3")
@@ -51,7 +52,7 @@ class Rig_Arm:
     vecList = ([1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0])     
 
     #Cleaning up joint orinet___Function    
-    def cleanJntOrient(self, jntType, side):
+    def cleanJntOrient(jntType, side):
         for i in range(len(jntDict[side])):
             if jntDict[side][i][0] == jntDict[side][0][0]:
                 pass
@@ -64,7 +65,7 @@ class Rig_Arm:
                 cmds.setAttr(jntType + jntDict[side][i][0] +".jointOrientY", 0)
 
     #Making Controls___Function
-    def ctrlCircle(self, ctrlinfo, ctrlNormal):
+    def ctrlCircle(ctrlinfo, ctrlNormal):
         for info in range(len(ctrlinfo)):
             pos = ctrlinfo[info][0]
             ctrlGRP = cmds.group(em = True, name = ctrlinfo[info][2])
@@ -77,54 +78,54 @@ class Rig_Arm:
 
 
  
-    #Building joints
-    self.create_arm_jnt("IK_")
-    self.create_arm_jnt("FK_")
-    self.create_arm_jnt("bn_")
+#Building joints
+create_arm_jnt("IK_")
+create_arm_jnt("FK_")
+create_arm_jnt("bn_")
 
-    #Orient Joints
-    self.arm_orientJoint("bn_lf_shoulder_JNT","bn_lf_elbow_JNT", vecList[0], vecList[2])
-    self.arm_orientJoint("bn_lf_elbow_JNT","bn_lf_wrist_JNT", vecList[0], vecList[2])
-    self.arm_orientJoint("bn_lf_wrist_JNT","bn_lf_wristEnd_JNT", vecList[0], vecList[2])
-    self.arm_orientJoint("IK_lf_shoulder_JNT","IK_lf_elbow_JNT", vecList[0], vecList[2])
-    self.arm_orientJoint("IK_lf_elbow_JNT","IK_lf_wrist_JNT", vecList[0], vecList[2])
-    self.arm_orientJoint("IK_lf_wrist_JNT","IK_lf_wristEnd_JNT", vecList[0], vecList[2])
-    self.arm_orientJoint("FK_lf_shoulder_JNT","FK_lf_elbow_JNT", vecList[0], vecList[2])
-    self.arm_orientJoint("FK_lf_elbow_JNT","FK_lf_wrist_JNT", vecList[0], vecList[2])
-    self.arm_orientJoint("FK_lf_wrist_JNT","FK_lf_wristEnd_JNT", vecList[0], vecList[2])
+#Orient Joints
+arm_orientJoint("bn_lf_shoulder_JNT","bn_lf_elbow_JNT", vecList[0], vecList[2])
+arm_orientJoint("bn_lf_elbow_JNT","bn_lf_wrist_JNT", vecList[0], vecList[2])
+arm_orientJoint("bn_lf_wrist_JNT","bn_lf_wristEnd_JNT", vecList[0], vecList[2])
+arm_orientJoint("IK_lf_shoulder_JNT","IK_lf_elbow_JNT", vecList[0], vecList[2])
+arm_orientJoint("IK_lf_elbow_JNT","IK_lf_wrist_JNT", vecList[0], vecList[2])
+arm_orientJoint("IK_lf_wrist_JNT","IK_lf_wristEnd_JNT", vecList[0], vecList[2])
+arm_orientJoint("FK_lf_shoulder_JNT","FK_lf_elbow_JNT", vecList[0], vecList[2])
+arm_orientJoint("FK_lf_elbow_JNT","FK_lf_wrist_JNT", vecList[0], vecList[2])
+arm_orientJoint("FK_lf_wrist_JNT","FK_lf_wristEnd_JNT", vecList[0], vecList[2])
 
-    self.arm_orientJoint("bn_rt_shoulder_JNT","bn_rt_elbow_JNT", vecList[1], vecList[3])
-    self.arm_orientJoint("bn_rt_elbow_JNT","bn_rt_wrist_JNT", vecList[1], vecList[3])
-    self.arm_orientJoint("bn_rt_wrist_JNT","bn_rt_wristEnd_JNT", vecList[1], vecList[3])
-    self.arm_orientJoint("IK_rt_shoulder_JNT","IK_rt_elbow_JNT", vecList[1], vecList[3])
-    self.arm_orientJoint("IK_rt_elbow_JNT","IK_rt_wrist_JNT", vecList[1], vecList[3])
-    self.arm_orientJoint("IK_rt_wrist_JNT","IK_rt_wristEnd_JNT", vecList[1], vecList[3])
-    self.arm_orientJoint("FK_rt_shoulder_JNT","FK_rt_elbow_JNT", vecList[1], vecList[3])
-    self.arm_orientJoint("FK_rt_elbow_JNT","FK_rt_wrist_JNT", vecList[1], vecList[3])
-    self.arm_orientJoint("FK_rt_wrist_JNT","FK_rt_wristEnd_JNT", vecList[1], vecList[3])
+arm_orientJoint("bn_rt_shoulder_JNT","bn_rt_elbow_JNT", vecList[1], vecList[3])
+arm_orientJoint("bn_rt_elbow_JNT","bn_rt_wrist_JNT", vecList[1], vecList[3])
+arm_orientJoint("bn_rt_wrist_JNT","bn_rt_wristEnd_JNT", vecList[1], vecList[3])
+arm_orientJoint("IK_rt_shoulder_JNT","IK_rt_elbow_JNT", vecList[1], vecList[3])
+arm_orientJoint("IK_rt_elbow_JNT","IK_rt_wrist_JNT", vecList[1], vecList[3])
+arm_orientJoint("IK_rt_wrist_JNT","IK_rt_wristEnd_JNT", vecList[1], vecList[3])
+arm_orientJoint("FK_rt_shoulder_JNT","FK_rt_elbow_JNT", vecList[1], vecList[3])
+arm_orientJoint("FK_rt_elbow_JNT","FK_rt_wrist_JNT", vecList[1], vecList[3])
+arm_orientJoint("FK_rt_wrist_JNT","FK_rt_wristEnd_JNT", vecList[1], vecList[3])
 
-    #Cleaning Joint Orient 
-    self.cleanJntOrient("IK_", "leftArm")
-    self.cleanJntOrient("FK_", "leftArm")
-    self.cleanJntOrient("bn_", "leftArm")
+#Cleaning Joint Orient 
+cleanJntOrient("IK_", "leftArm")
+cleanJntOrient("FK_", "leftArm")
+cleanJntOrient("bn_", "leftArm")
 
-    self.cleanJntOrient("IK_", "rightArm")
-    self.cleanJntOrient("FK_", "rightArm")
-    self.cleanJntOrient("bn_", "rightArm")
+cleanJntOrient("IK_", "rightArm")
+cleanJntOrient("FK_", "rightArm")
+cleanJntOrient("bn_", "rightArm")
 
-    #Making IK Handle 
-    lf_IKH = cmds.ikHandle( n = "rIK_lf_arm_Hndl" , sj = "IK_" + jntDict["leftArm"][0][0], ee = "IK_" + jntDict["leftArm"][2][0])
-    lf_IKE = cmds.rename(lf_IKH[1], "rIK_lf_arm_Eff")
-    rt_IKH = cmds.ikHandle( n = "rIK_rt_arm_Hndl" , sj = "IK_" + jntDict["rightArm"][0][0], ee = "IK_" + jntDict["rightArm"][2][0])
-    rt_IKE = cmds.rename(rt_IKH[1], "rIK_rt_arm_Eff")
+#Making IK Handle 
+lf_IKH = cmds.ikHandle( n = "rIK_lf_arm_Hndl" , sj = "IK_" + jntDict["leftArm"][0][0], ee = "IK_" + jntDict["leftArm"][2][0])
+lf_IKE = cmds.rename(lf_IKH[1], "rIK_lf_arm_Eff")
+rt_IKH = cmds.ikHandle( n = "rIK_rt_arm_Hndl" , sj = "IK_" + jntDict["rightArm"][0][0], ee = "IK_" + jntDict["rightArm"][2][0])
+rt_IKE = cmds.rename(rt_IKH[1], "rIK_rt_arm_Eff")
 
-    #Orienting IK Handle
-    cmds.parent(lf_IKH[0], "bn_"+jntDict["leftArm"][2][0])
-    cmds.parent(rt_IKH[0], "bn_"+jntDict["rightArm"][2][0])
-    cmds.makeIdentity(lf_IKH[0], apply = True, t = 0,  r = 1, s = 0, n = 0, pn = True)
-    cmds.makeIdentity(rt_IKH[0], apply = True, t = 0,  r = 1, s = 0, n = 0, pn = True)
-    cmds.parent(lf_IKH[0], w = True)
-    cmds.parent(rt_IKH[0], w = True)
+#Orienting IK Handle
+cmds.parent(lf_IKH[0], "bn_"+jntDict["leftArm"][2][0])
+cmds.parent(rt_IKH[0], "bn_"+jntDict["rightArm"][2][0])
+cmds.makeIdentity(lf_IKH[0], apply = True, t = 0,  r = 1, s = 0, n = 0, pn = True)
+cmds.makeIdentity(rt_IKH[0], apply = True, t = 0,  r = 1, s = 0, n = 0, pn = True)
+cmds.parent(lf_IKH[0], w = True)
+cmds.parent(rt_IKH[0], w = True)
 
-    ctrlCircle(lf_IKctrlList, (40, -50, 0))
-    ctrlCircle(rt_IKctrlList, (40, 50, 0))
+ctrlCircle(lf_IKctrlList, (40, -50, 0))
+ctrlCircle(rt_IKctrlList, (40, 50, 0))
