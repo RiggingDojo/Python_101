@@ -16,11 +16,13 @@ rigData["FK_ArmList"] = [
                          ["FK_lf_shoulder_CTRL", "FK_lf_shoulder_CTRL_srt", "FK_lf_elbow_CTRL", "FK_lf_elbow_CTRL_srt", "FK_lf_wrist_CTRL", "FK_lf_wrist_CTRL_srt"], 
                          ["FK_rt_shoulder_CTRL", "FK_rt_shoulder_CTRL_srt", "FK_rt_elbow_CTRL", "FK_rt_elbow_CTRL_srt", "FK_rt_wrist_CTRL", "FK_rt_wrist_CTRL_srt"]
                          ]
-                    
+rigData["HierarchyOrg"] = ["singer", "singer_GEO_hrc", "GlobalMove_CTRL_srt", "JNT_hrc", "IK_skeleton_hrc", "FK_skeleton_hrc", "skeleton_hrc", "extra_JNT_hrc", "ControlObjects_hrc", "ExtraNode_hrc",
+"toHide_hrc", "toShow_hrc"]                    
 
 
 class Rig_Arm:
     def rig_arm(self):
+        self.HrcSetup()
             #Building joints
         self.createArmJnt("IK_")
         self.createArmJnt("FK_")
@@ -74,7 +76,19 @@ class Rig_Arm:
         ]
         self.FK_CtrlShape()
         self.FK_CtrlMaker()
-        
+    def HrcSetup(self):
+         cmds.group(em = True, name = rigData["HierarchyOrg"][0])
+         cmds.group(em = True, p = rigData["HierarchyOrg"][0], name = rigData["HierarchyOrg"][1])
+         cmds.group(em = True, p = rigData["HierarchyOrg"][0], name = rigData["HierarchyOrg"][2])
+         cmds.group(em = True, p = rigData["HierarchyOrg"][2], name = rigData["HierarchyOrg"][3])
+         cmds.group(em = True, p = rigData["HierarchyOrg"][3], name = rigData["HierarchyOrg"][4])
+         cmds.group(em = True, p = rigData["HierarchyOrg"][3], name = rigData["HierarchyOrg"][5])
+         cmds.group(em = True, p = rigData["HierarchyOrg"][3], name = rigData["HierarchyOrg"][6])
+         cmds.group(em = True, p = rigData["HierarchyOrg"][3], name = rigData["HierarchyOrg"][7])
+         cmds.group(em = True, p = rigData["HierarchyOrg"][2], name = rigData["HierarchyOrg"][8])
+         cmds.group(em = True, p = rigData["HierarchyOrg"][0], name = rigData["HierarchyOrg"][9])
+         cmds.group(em = True, p = rigData["HierarchyOrg"][9], name = rigData["HierarchyOrg"][10])
+         cmds.group(em = True, p = rigData["HierarchyOrg"][9], name = rigData["HierarchyOrg"][11])    
     #Building joints___Function
     def createArmJnt(self, jntType):
         for i in range(len(rigData["ArmJoints"])):
@@ -113,6 +127,7 @@ class Rig_Arm:
                     cmds.setAttr(jntType+rigData["ArmJoints"][i][o] +".jointOrientY", 0)
 
     #Making Controls___Function
+    
     def IK_CtrlMaker(self):
         for i in range(len(rigData["JointsPos"])):
             pos = rigData["JointsPos"][i][2]
@@ -123,6 +138,9 @@ class Rig_Arm:
                 ctrl = cmds.circle(n=rigData["IK_ArmList"][i][0], r = 6, nr= (40, 50, 0), c=(0, 0, 0), ch=False)
             cmds.parent(ctrl, ctrlGRP)
             cmds.xform(ctrlGRP, t=pos, ws = True)
+            cmds.parent(ctrlGRP, rigData["IK_ArmList"][i][2])
+            cmds.makeIdentity(ctrlGRP, apply = True, t = 0, r = 1, s = 0, n = 0, pn = True)
+            cmds.parent(ctrlGRP, rigData["HierarchyOrg"][8])
 
     def IK_Create(self):
         lf_IKH = cmds.ikHandle( n = rigData["IK_ArmList"][0][2] , sj = "IK_"+rigData["ArmJoints"][0][0], ee = "IK_" + rigData["ArmJoints"][0][2])
@@ -165,7 +183,10 @@ class Rig_Arm:
                 ctrlGRP = cmds.group(em = True, name = rigData["FK_ArmList"][o][1::2][s])
                 cmds.parent(rigData["FK_ArmList"][o][0::2][s], ctrlGRP)
                 cmds.xform(ctrlGRP, t=pos, ws = True)
- 
+                cmds.parent(ctrlGRP, "FK_"+rigData["ArmJoints"][o][s])   
+                cmds.makeIdentity(ctrlGRP, apply=True, t=0, r=1, s=0, n=0, pn=True)
+                cmds.parent(ctrlGRP, rigData["HierarchyOrg"][8])
+     
     def FK_CtrlShape(self):
         for i in range(len(rigData["FK_ArmList"])):
             for o in range(len(rigData["FK_ArmList"][i][0::2])):            
@@ -226,9 +247,14 @@ class Rig_Arm:
                                          (0.70710700000000004, 0, -0.70710700000000004),\
                                          (0.382683, 0, -0.92388000000000003),\
                                          (0, 0, -1)]\
-                                        )
-                cmds.setAttr(crv+".sx", 0)
-                cmds.setAttr(crv+".rz", 0)
+                              )
+                              
+                cmds.setAttr(crv+".scale", 0, 5.5, 5.5, type = "double3")
+                if rigData["FK_ArmList"][i][0::2][o] == rigData["FK_ArmList"][1][0::2][o]:
+                    cmds.setAttr(crv+".rz", 45)
+                else:
+                    cmds.setAttr(crv+".rz", -45)
+                    
                 cmds.makeIdentity(crv, apply = True, t = 0,  r = 1, s = 1, n = 0, pn = True)
                 cmds.rename(crv, rigData["FK_ArmList"][i][0::2][o])
 
