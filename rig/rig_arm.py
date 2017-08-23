@@ -1,21 +1,22 @@
 import maya.cmds as cmds
 rigData={}
 rigData["ArmJoints"]=[
-                      ["lf_shoulder_JNT", "lf_elbow_JNT", "lf_wrist_JNT","lf_wristEnd_JNT"],
-                      ["rt_shoulder_JNT", "rt_elbow_JNT", "rt_wrist_JNT", "rt_wristEnd_JNT"]
+                      ["lf_shoulder_JNT_Offset", "lf_shoulder_JNT", "lf_elbow_JNT", "lf_wrist_JNT"],
+                      ["rf_shoulder_JNT_Offset", "rt_shoulder_JNT", "rt_elbow_JNT", "rt_wrist_JNT"]
                       ]
 rigData["IK_ArmList"] = [
                          ["IK_lf_arm_CTRL", "IK_lf_arm_CTRL_srt", "rIK_lf_arm_Hndl", "rIK_lf_arm_Eff", "IK_lf_armPV_CTRL", "IK_lf_armPV_CTRL_srt"], 
                          ["IK_rt_arm_CTRL", "IK_rt_arm_CTRL_srt", "rIK_rt_arm_Hndl", "rIK_rt_arm_Eff", "IK_rt_armPV_CTRL", "IK_rt_armPV_CTRL_srt"]
                         ]
 rigData["JointsPos"]=[
-                     [[9.58574, 118.83508, -0.70541], [23.075005157215955, 101.68192524537305, -3.012311], [37.7333821711548, 83.04211007076694, -0.7054100000000001], [59.84439, 61.86297, 1.30086]],
-                     [[-9.58574, 118.83508, -0.70541], [-23.075005157215955, 101.68192524537305, -3.012311], [-37.7333821711548, 83.04211007076694, -0.7054100000000001], [-59.84439, 61.86297, 1.30086]]
+                     [[9.58574, 118.83508, -0.70541], [23.075005157215955, 101.68192524537305, -3.012311], [37.7333821711548, 83.04211007076694, -0.7054100000000001]],
+                     [[-9.58574, 118.83508, -0.70541], [-23.075005157215955, 101.68192524537305, -3.012311], [-37.7333821711548, 83.04211007076694, -0.7054100000000001]]
                      ]
 rigData["FK_ArmList"] = [
                          ["FK_lf_shoulder_CTRL", "FK_lf_shoulder_CTRL_srt", "FK_lf_elbow_CTRL", "FK_lf_elbow_CTRL_srt", "FK_lf_wrist_CTRL", "FK_lf_wrist_CTRL_srt"], 
                          ["FK_rt_shoulder_CTRL", "FK_rt_shoulder_CTRL_srt", "FK_rt_elbow_CTRL", "FK_rt_elbow_CTRL_srt", "FK_rt_wrist_CTRL", "FK_rt_wrist_CTRL_srt"]
-                         ]
+                         ]   
+                    
 rigData["HierarchyOrg"] = ["singer", "singer_GEO_hrc", "GlobalMove_CTRL_srt", "JNT_hrc", "skeleton_hrc", "extra_JNT_hrc", "ControlObjects_hrc", "ExtraNode_hrc",
 "toHide_hrc", "toShow_hrc", "IKh_hrc"]                   
 
@@ -88,7 +89,7 @@ class Rig_Arm:
                     cmds.select(cl=True)
                 
     #Orient Joints____Function
-    def arm_orientJoint(jntType, orntJnt, aimJnt, aimVec, upVec):
+    def arm_orientJoint(self, jntType, orntJnt, aimJnt, aimVec, upVec):
         loc = cmds.spaceLocator()
         cmds.parent(loc[0], jntType+orntJnt)
         cmds.setAttr(loc[0]+".translate", 0, 0, 5, type = "double3")
