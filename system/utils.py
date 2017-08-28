@@ -1,6 +1,19 @@
 import maya.cmds as mc
 import pymel.core as pm
 from math import pow, sqrt
+import json
+import tempfile
+import os
+
+def writeJson(fileName, data):
+    with open(fileName, 'w') as outfile:
+        json.dump(data, outfile)
+    file.close(outfile)
+
+def readJson(fileName):
+    with open(fileName, 'r') as infile:
+        data = (open(infile.name, 'r').read())
+    return data
 
 #turns a string into a list with the string being the only object in that list
 def stringIntoList(x):
@@ -90,7 +103,7 @@ def makeJointChain(theParent, prefix, name):
             mc.parent(prefix + object, w=True)
 
     mc.delete(name)
-
+    writeJson(os.environ["RDOJO_DATA"] + '/data.json', jointList)
     return jointList
 
 #orients the objects in list. Note: ordering is based on order of list. also takes what direction you would like it to be oriented
@@ -249,8 +262,6 @@ def cntrlHierarchy(list, radius, colour, toParent='cntrl_grp'):
 
         # for the next part to work, we need the cntrls to be in the same order as the objects, so put the cntrls in a list
         cntrlList.append(cntrl[0])
-
-
 
     for object, cntrl in zip(list, cntrlList):
 
@@ -561,6 +572,7 @@ def stretchyIK(IK_cntrls, IK_joints, orientation='x', global_cntrl='global_cntrl
 
     for x in range(len(orderedIK) - 1):
         mc.connectAttr(blender + '.outputR', orderedIK[x] + '.scale' + orientation)
+
 
 
 
