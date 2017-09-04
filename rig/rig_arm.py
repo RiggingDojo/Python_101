@@ -1,5 +1,6 @@
 import maya.cmds as mc
 import system.utils as utils
+reload(utils)
 
 
 class arm:
@@ -10,6 +11,7 @@ class arm:
     def __init__(self, name, side = ''):
         self.name = name
         self.side = side
+        self.rigInfo = {}
         if self.side != '':
             self.fullName = self.side + '_' + self.name
             self.armList.append(self.fullName)
@@ -24,29 +26,29 @@ class arm:
             utils.organizationGroup()
 
         # makes joints based on the locator positions. Orient the joints down X, send the rotate values to joint orient, and parent the chain in a hierarchy
-        bind_joints = utils.makeJointChain('joints_grp', prefix, name)
-        utils.rotateToJointOrient(utils.orientChain(bind_joints, orientation='x'))
-        utils.parentChain(bind_joints)
+        self.rigInfo['bind_joints'] = utils.makeJointChain('joints_grp', prefix, name)
+        utils.rotateToJointOrient(utils.orientChain(self.rigInfo['bind_joints'], orientation='x'))
+        utils.parentChain(self.rigInfo['bind_joints'])
 
         # duplicate bind shoulder to make FK chain, make fk cntrls, connect fk cntrls to fk joints, make a volumetric scaling for FK
-        FK_joints = utils.duplicateNewName(utils.getEnds(bind_joints)[0], prefix, 'FK_', 13)
-        FK_cntrls = utils.cntrlHierarchy(FK_joints, 1, 13, toParent='cntrl_grp')
-        utils.constrainLists(FK_cntrls, FK_joints, "yes", "yes", "none")
-        utils.volumetricFK(FK_cntrls, FK_joints, orientation='x')
+        self.rigInfo['FK_joints'] = utils.duplicateNewName(utils.getEnds(self.rigInfo['bind_joints'])[0], prefix, 'FK_', 13)
+        self.rigInfo['FK_cntrls'] = utils.cntrlHierarchy(self.rigInfo['FK_joints'], 1, 13, toParent='cntrl_grp')
+        utils.constrainLists(self.rigInfo['FK_cntrls'], self.rigInfo['FK_joints'], "yes", "yes", "none")
+        utils.volumetricFK(self.rigInfo['FK_cntrls'], self.rigInfo['FK_joints'], orientation='x')
 
         # duplicate bind joints to make IK chain. Make cntrl for the end of the IK. make the IK then make the IK joints stretchy.
-        IK_joints = utils.duplicateNewName(bind_joints[0], prefix, 'IK_', 15)
-        IK_cntrls = utils.cntrlHierarchy(utils.getEnds(IK_joints)[1], 1.5, 24, toParent='cntrl_grp')
-        utils.makeIK(IK_joints, IK_cntrls)
-        utils.stretchyIK(IK_cntrls, IK_joints, orientation='x', global_cntrl='global_cntrl')
+        self.rigInfo['IK_joints'] = utils.duplicateNewName(self.rigInfo['bind_joints'][0], prefix, 'IK_', 15)
+        self.rigInfo['IK_cntrls'] = utils.cntrlHierarchy(utils.getEnds(self.rigInfo['IK_joints'])[1], 1.5, 24, toParent='cntrl_grp')
+        utils.makeIK(self.rigInfo['IK_joints'], self.rigInfo['IK_cntrls'])
+        utils.stretchyIK(self.rigInfo['IK_cntrls'], self.rigInfo['IK_joints'], orientation='x', global_cntrl='global_cntrl')
 
         # makes a blend between the fk and ik joints affecting the bind joints
-        utils.blendThree(bind_joints, FK_joints, IK_joints, 'global_cntrl', 'FKIK', name)
+        utils.blendThree(self.rigInfo['bind_joints'], self.rigInfo['FK_joints'], self.rigInfo['IK_joints'], 'global_cntrl', 'FKIK', name)
 
     #function to make locators on screen. specify orientaion, if you want it to alternate, and the name of the locators
     def locators(self, orientation, alternating, *args):
 
-        #it all start at the origin
+        #it all starts at the origin
         x = 0
         y = 0
         z = 0
@@ -61,9 +63,9 @@ class arm:
 
         # we may be passing args in args, so this takes care of that
         argsList = list(args)
+        newList = []
 
         for i in argsList[0]:
-            print type(i)
             if isinstance(i, bool) == True:
                 argsList = argsList[0]
                 list2 = list(argsList)
@@ -72,52 +74,39 @@ class arm:
                         list2.remove(n)
                         argsList = list2
 
-        #function to figure out the placement based on given orientation and distance
-        def evaluate(ori, alt, oriDistance, aimDistance, o, k):
-            if '-' in ori:
-                o = o - oriDistance
-                if alt == True:
-                    if k == aimDistance:
-                        k = 0
-                    else:
-                        k = aimDistance
-            else:
-                o = o + oriDistance
-                if alt == True:
-                    if k == aimDistance:
-                        k = 0
-                    else:
-                        k = aimDistance
+        for n in argsList:
+            if type(n) == list:
+                for i in n:
+                    newList.append(i)
 
-            returnList = []
-            returnList.append(o)
-            returnList.append(k)
-
-            #return a list with o and k which are values
-            return returnList
+            elif type(n) == str or type(n) == unicode:
+                newList.append(n)
 
         #make a group to organize our locators and lock it.
         tempGrp = mc.createNode('transform', n=self.fullName)
         utils.lockHideAttr(tempGrp, ['tx', 'ty', 'tz', 'rx', 'ry', 'rz', 'sx', 'sy', 'sz', 'visibility'], True, True)
 
-        for object in argsList:
+        for object in newList:
 
-            print object
-            #make a locator, place it whatever x, y, z is, center its pivot and add it to the list
-            loc = mc.spaceLocator(p=[x, y, z], n=self.side + '_' + object, a=True)
+            # make a locator, place it whatever x, y, z is, center its pivot and add it to the list
+            if self.side == '':
+                loc = mc.spaceLocator(p=[x, y, z], n=object, a=True)
+            else:
+                loc = mc.spaceLocator(p=[x, y, z], n=self.side + '_' + object, a=True)
+
             mc.xform(cp=True)
             locList.append(loc)
 
             #here is how to figure out x y z
             if orientation == 'X' or orientation == '-X':
-                x = evaluate(orientation, alternating, d1, -d2, x, z)[0]
-                z = evaluate(orientation, alternating, d1, -d2, x, z)[1]
+                x = utils.evaluate(orientation, alternating, d1, -d2, x, z)[0]
+                z = utils.evaluate(orientation, alternating, d1, -d2, x, z)[1]
             elif orientation == 'Y' or orientation == '-Y':
-                y = evaluate(orientation, alternating, d1, d2, y, z)[0]
-                z = evaluate(orientation, alternating, d1, d2, y, z)[1]
+                y = utils.evaluate(orientation, alternating, d1, d2, y, z)[0]
+                z = utils.evaluate(orientation, alternating, d1, d2, y, z)[1]
             elif orientation == 'Z' or orientation == '-Z':
-                z = evaluate(orientation, alternating, d1, d2, z, y)[0]
-                y = evaluate(orientation, alternating, d1, d2, z, y)[1]
+                z = utils.evaluate(orientation, alternating, d1, d2, z, y)[0]
+                y = utils.evaluate(orientation, alternating, d1, d2, z, y)[1]
 
         #reverse the list so we can start from the bottom and parent up
         locList.reverse()
@@ -131,5 +120,3 @@ class arm:
             #if the object is the last object in the list(the top parent), then parent the object to the group we made
             elif locList[i] == locList[-1]:
                 mc.parent(locList[i], tempGrp)
-
-
