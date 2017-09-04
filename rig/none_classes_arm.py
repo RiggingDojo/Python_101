@@ -80,10 +80,15 @@ def cleanJntOrientArm(jntType):
         
         cmds.parent(jntType+rigData["ArmJoints"][i][1], jntType+rigData["ArmJoints"][i][0])
         cmds.setAttr(jntType+rigData["ArmJoints"][i][1]+".jointOrientX", 0)
+        cmds.setAttr(jntType+rigData["ArmJoints"][i][1]+".jointOrientY", 0)
+        cmds.setAttr(jntType+rigData["ArmJoints"][i][1]+".ty", 0)
+        cmds.setAttr(jntType+rigData["ArmJoints"][i][1]+".tz", 0)
+
         
         cmds.parent(jntType+rigData["ArmJoints"][i][2], jntType+rigData["ArmJoints"][i][1])
         cmds.setAttr(jntType+rigData["ArmJoints"][i][2]+".jointOrient", 0, 0, 0, type = "double3")
-           
+        cmds.setAttr(jntType+rigData["ArmJoints"][i][2]+".ty", 0)
+        cmds.setAttr(jntType+rigData["ArmJoints"][i][2]+".tz", 0)   
                 
 def IK_Create():
     for i in range(len(rigData["IK_ArmList"])):      
