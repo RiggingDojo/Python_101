@@ -1,5 +1,5 @@
 import maya.cmds as mc
-import pymel.core as pm
+import maya.mel as mel
 from math import pow, sqrt
 import json
 import tempfile
@@ -51,6 +51,25 @@ def lockHideAttr(obj,attrArray,lock,hide):
     for a in attrArray:
         mc.setAttr(obj + '.' + a, k=hide,l=lock)
 
+#searches for a digits in a string and returns the digits found in that string as a string. If no digits found, return False
+def getDigits(str1):
+    c = ''
+    for i in str1:
+        if i.isdigit():
+            c += i
+    if c == '':
+        return False
+    else:
+        return c
+
+#check if something exists, if it does, warn us and delete it
+def checkExists(*args):
+    for check in args:
+        if mc.objExists(check):
+            mc.warning('DELETING an existing \"' + check + '\", double check to ensure names were not the same.')
+            mc.delete(check)
+
+
 # function to send rotate values to joint orient.
 def rotateToJointOrient(list):
 
@@ -70,6 +89,7 @@ def rotateToJointOrient(list):
 
         # set rotation values to zero
         mc.xform(object, ro=[0, 0, 0])
+        mc.select(cl=True)
 
     return list
 
@@ -132,6 +152,7 @@ def orientChain(list, orientation='x'):
             mc.aimConstraint(list[x + 1], list[x], mo=False, aim=aimVector)
             mc.select(list[x])
             mc.delete(mc.listRelatives(type="aimConstraint"))
+            mc.select(cl=True)
 
     return list
 
@@ -142,6 +163,7 @@ def parentChain(list):
         if list[x] != list[0]:
             mc.parent(list[x], list[x - 1])
 
+    mc.select(cl=True)
 
 # function to make a quad arrow
 def create_quad_arrow(name):
@@ -163,7 +185,6 @@ def create_quad_arrow(name):
 
 
 def organizationGroup():
-    list=[]
 
     # makes a group for the arm rig and generates the global cntrl with an FK IK attribute, an FK stretch, and volumetric
     mc.group(n='rig_grp', em=True, w=True)
@@ -203,31 +224,52 @@ def organizationGroupExists():
 
 # function to duplicate an object and its children and assign new names
 def duplicateNewName(object, search, replace, colour):
-    # Make a new variable with the name of the original renamed with the replace
-    returnList = []
-    objectSplit = object.split(search)
-    newObject = objectSplit[0] + replace + objectSplit[1]
+    childList = []
 
-    # duplicate the original and name it accordingly
-    mc.duplicate(object, n=newObject)
-    returnList.append(newObject)
-    # select its children so that they can be renamed too
-    mc.select(newObject)
+    # this is the list of all the children of object we will be duplicating
+    checkList = mc.listRelatives(object, ad=True, f=False, type='transform')
+    checkList.reverse()
 
+    # name for our new object
+    newObject = object.replace(search, replace)
+
+    # duplicate the original and name it accordingly, rename all the children for unique names
+    mc.duplicate(object, n=newObject, rc=True)
+
+    # change the color
     if colour is not "none":
         mc.setAttr(newObject + '.overrideEnabled', 1)
         mc.setAttr(newObject + '.overrideColor', colour)
 
-    mc.select(mc.listRelatives(ad=True, f=True))
+    # get the children of the new object
+    children = mc.listRelatives(newObject, ad=True, f=False, type='transform')
+    children.reverse()
 
-    # rename the children
-    for item in pm.selected():
-        item.rename(item.name().replace(search, replace))
-        returnList.append(item.name())
+    # rename the children with the search and replace parameters
+    for child in children:
+        newName = child.replace(search, replace)
+        mc.rename(child, newName)
+        childList.append(newName)
 
-    returnList.sort()
+    # when we duplicated our object, we renamed all our children with unique names, but we want them to share the same names.
+    # this checks the original children and the duplicate children's and matches the digits of the duplicate to the original
+    for check, child in zip(checkList, childList):
+
+        if getDigits(check) == False and type(getDigits(child)) != bool:
+            newName1 = child.replace(getDigits(child), '')
+            mc.rename(child, newName1)
+
+        elif type(getDigits(check)) != bool and type(getDigits(child)) != bool:
+            if getDigits(check) != getDigits(child):
+                newName2 = child.replace(getDigits(child), getDigits(check))
+                mc.rename(child, newName2)
+
+    # insert our duplicate object into the list as the first object in the list so that it is in order
+    returnList= mc.listRelatives(newObject, ad=True, f=False, type='transform')
+    returnList.reverse()
+    returnList.insert(0, newObject)
+
     return returnList
-
 
 
 # make controls based on the hierarchy of a list
@@ -275,7 +317,6 @@ def cntrlHierarchy(list, radius, colour, toParent='cntrl_grp'):
     if toParent is not "none":
         mc.parent(getRoot(cntrlList[0]), toParent)
 
-    cntrlList.sort()
     return cntrlList
 
 
@@ -315,7 +356,7 @@ def offsetCreator(list):
 def blendThree(list1, list2, list3, controlToAttribute, attributeLongName, fullName):
 
     # if the lists arent the same length, spit out a warning
-    if len(list1) != len(list2) and len(list3):
+    if len(list1) != len(list2) or len(list1) != len(list3):
         mc.warning('The lists in blendThree dont have the same amount of objects')
 
     list1.sort()
@@ -329,34 +370,31 @@ def blendThree(list1, list2, list3, controlToAttribute, attributeLongName, fullN
 
     # list of the blend nodes we are about to make
     blendNodes = []
+    attributes = ['translate', 'rotate', 'scale']
 
-    for object in list1:
-        # for all the objects in the list, make a translate and rotate blending node
-        mc.shadingNode('blendColors', n=object + '_translate_' + attributeLongName + 'blend', au=True)
-        mc.shadingNode('blendColors', n=object + '_rotate_' + attributeLongName + 'blend', au=True)
-        mc.shadingNode('blendColors', n=object + '_scale_' + attributeLongName + 'blend', au=True)
+    for object, object2, object3 in zip(list1, list2, list3):
+        for attr in attributes:
 
-        # add the blending nodes to the list
-        blendNodes.append(object + '_translate_' + attributeLongName + 'blend')
-        blendNodes.append(object + '_rotate_' + attributeLongName + 'blend')
-        blendNodes.append(object + '_scale_' + attributeLongName + 'blend')
+            #name our good stuff
+            blendAttrName = object + '_' + attr + '_' + attributeLongName + 'blend'
 
-        # connect the blends output to the list1
-        mc.connectAttr(object + '_translate_' + attributeLongName + 'blend.output', object + '.translate')
-        mc.connectAttr(object + '_rotate_' + attributeLongName + 'blend.output', object + '.rotate')
-        mc.connectAttr(object + '_scale_' + attributeLongName + 'blend.output', object + '.scale')
+            #check to make sure our object doesnt already exist
+            checkExists(blendAttrName)
 
-    for object, object2 in zip(list1, list2):
-        # connect list 2 to the blends color2
-        mc.connectAttr(object2 + '.translate', object + '_translate_' + attributeLongName + 'blend.color2')
-        mc.connectAttr(object2 + '.rotate', object + '_rotate_' + attributeLongName + 'blend.color2')
-        mc.connectAttr(object2 + '.scale', object + '_scale_' + attributeLongName + 'blend.color2')
+            # for all the objects in the list, make a translate and rotate blending node
+            mc.shadingNode('blendColors', n=blendAttrName, au=True)
 
-    for object, object3 in zip(list1, list3):
-        # connect list 3 to blends color 1
-        mc.connectAttr(object3 + '.translate', object + '_translate_' + attributeLongName + 'blend.color1')
-        mc.connectAttr(object3 + '.rotate', object + '_rotate_' + attributeLongName + 'blend.color1')
-        mc.connectAttr(object3 + '.scale', object + '_scale_' + attributeLongName + 'blend.color1')
+            # add the blending nodes to the list
+            blendNodes.append(blendAttrName)
+
+            # connect the blends output to the list1
+            mc.connectAttr(blendAttrName + '.output', object + '.' + attr)
+
+            # connect list 2 to the blends color2
+            mc.connectAttr(object2 + '.' + attr, blendAttrName + '.color2')
+
+            # connect list 3 to blends color 1
+            mc.connectAttr(object3 + '.' + attr, blendAttrName + '.color1')
 
     for node in blendNodes:
         # connect the attribute we made to all of the blendColors "blender" attribute
@@ -421,16 +459,21 @@ def volumetricFK(list1, list2, orientation='x'):
 
     for cntrl in list1:
 
+        multDivName = cntrl + '_FKstretch_inverse'
+        blendName = cntrl + '_FKstretch_blend'
+
+        checkExists(multDivName, blendName)
+
         #make our multiply divide that will be the inverse of x, and our blend colors node
-        mc.shadingNode('multiplyDivide', n=cntrl + '_FKstretch_inverse', au=True)
-        mc.shadingNode('blendColors', n=cntrl + '_FKstretch_blend', au=True)
+        mc.shadingNode('multiplyDivide', n=multDivName, au=True)
+        mc.shadingNode('blendColors', n=blendName, au=True)
 
         #set the operation of the multDiv to be division, and set input1x to be 1
         mc.setAttr(cntrl + '_FKstretch_inverse.operation', 2)
         mc.setAttr(cntrl + '_FKstretch_inverse.input1X', 1)
 
         #add an attribute to every control called volumetric to be used as our blender
-        mc.addAttr(cntrl, ln='volumetric', at='float', dv=0, min=0, max=1, w=True, r=True, k=True)
+        mc.addAttr(cntrl, ln='volumetric', at='float', dv=1, min=0, max=1, w=True, r=True, k=True)
         mc.connectAttr(cntrl + '.volumetric', cntrl + '_FKstretch_blend.blender')
 
         #connect our cntrl's scale X, Y, or Z into the multDiv to get the inverse to plug into the blend colors
@@ -494,8 +537,18 @@ def makeIK(IK_joints, IK_cntrl):
     #turn IK_cntrl into a list in case we pass a string
     stringIntoList(IK_cntrl)
 
-    #make an IK handle based on the joint chain given to us
-    IKhandle = mc.ikHandle(n=IK_cntrl[0] + '_handle', sj=getEnds(IK_joints)[0], ee=getEnds(IK_joints)[1], sol='ikRPsolver', pw=1, w=1)[0]
+    # make an IK handle based on the joint chain given to us
+    if len(IK_joints) >= 4:
+        mel.eval('ikSpringSolver;')
+        IKhandle = \
+        mc.ikHandle(n=IK_cntrl[0] + '_handle', sj=getEnds(IK_joints)[0], ee=getEnds(IK_joints)[1],
+                    sol='ikSpringSolver')[0]
+
+        mc.setAttr(IKhandle + '.poleVectorX', 1)
+        mc.setAttr(IKhandle + '.poleVectorY', 0)
+        mc.setAttr(IKhandle + '.poleVectorZ', 1)
+    else:
+        IKhandle = mc.ikHandle(n=IK_cntrl[0] + '_handle', sj=getEnds(IK_joints)[0], ee=getEnds(IK_joints)[1], sol='ikRPsolver', pw=1, w=1)[0]
 
     #parent the ik handle to IK_grp
     mc.parent(IKhandle, 'IK_grp')
@@ -509,70 +562,93 @@ def makeIK(IK_joints, IK_cntrl):
 #function that takes the IK cntrl, IK_joints, and the orientation for the stretchyness
 def stretchyIK(IK_cntrls, IK_joints, orientation='x', global_cntrl='global_cntrl'):
 
-
-    #make orientation uppercase to match syntax
+    # make orientation uppercase to match syntax
     orientation = orientation.upper()
 
     # if the orientation isnt x, y, or z, spit out a warning
     if orientation != 'X' and orientation != 'Y' and orientation != 'Z':
         mc.warning('Orientation can only be x, y, or z.')
 
-    #in case we pass a string in IK_cntrls, make IK_cntrls a list
+    # in case we pass a string in IK_cntrls, make IK_cntrls a list
     IK_cntrls = stringIntoList(IK_cntrls)
 
-    #variables for later use
-    orderedIK = [getEnds(IK_joints)[0]]
+    # variables for later use
     distances = []
     distanceTotal = 0.0
 
-    #Get the middle joint of the IK chain joints so that we can have the list in order
-    for aJoint in IK_joints:
-        if aJoint not in getEnds(IK_joints):
-            orderedIK.append(aJoint)
-
-    #put the last joint in the hierarchy last in the list so that it is in order
-    orderedIK.append(getEnds(IK_joints)[1])
-
-    #gets the distance between
-    for x in range(len(orderedIK) - 1):
-        distances.append(getDistance(orderedIK[x], orderedIK[x + 1]))
-
-    distanceNode = mc.distanceDimension(sp=mc.xform(orderedIK[0], q=True, t=True, ws=True),
-                                        ep=mc.xform(orderedIK[-1], q=True, t=True, ws=True))
-    mc.parent(mc.listRelatives(distanceNode, p=True)[0], 'extras_grp')
-
-    mc.pointConstraint(orderedIK[0], mc.listConnections(distanceNode)[0], mo=False)
-    mc.pointConstraint(IK_cntrls[0], mc.listConnections(distanceNode)[1], mo=False)
+    for x in range(len(IK_joints) - 1):
+        distances.append(getDistance(IK_joints[x], IK_joints[x + 1]))
 
     for x in distances:
         distanceTotal = distanceTotal + x
 
-    IK_stretch = mc.shadingNode('multiplyDivide', n=IK_cntrls[0] + '_IKstretch', au=True)
+    distanceNode = mc.distanceDimension(sp=mc.xform(IK_joints[0], q=True, t=True, ws=True),
+                                        ep=mc.xform(IK_joints[-1], q=True, t=True, ws=True))
+    mc.parent(mc.listRelatives(distanceNode, p=True)[0], 'extras_grp')
+
+    mc.pointConstraint(IK_joints[0], mc.listConnections(distanceNode)[0], mo=False)
+    mc.pointConstraint(IK_cntrls[0], mc.listConnections(distanceNode)[1], mo=False)
+
+    # our four variables we will be working with
+    IK_stretch = IK_cntrls[0] + '_IKstretch'
+    conditionNode = IK_cntrls[0] + '_stretchCondition'
+    globalScale = IK_cntrls[0] + '_IKstretch_globalScale'
+    blender = IK_cntrls[0] + '_IKstretch_blend'
+
+    # make sure our variables didnt exist before
+    checkExists(IK_stretch, conditionNode, globalScale, blender)
+
+    # ik stretch connections
+    mc.shadingNode('multiplyDivide', n=IK_stretch, au=True)
     mc.setAttr(IK_stretch + '.operation', 2)
-    #mc.setAttr(IK_stretch + '.input2X', distanceTotal)
     mc.connectAttr(distanceNode + '.distance', IK_stretch + '.input1X')
 
-    conditionNode = mc.shadingNode('condition', n=IK_cntrls[0] + '_stretchCondition', au=True)
+    # condition node connections
+    mc.shadingNode('condition', n=conditionNode, au=True)
     mc.setAttr(conditionNode + '.operation', 3)
-    #mc.setAttr(conditionNode + '.secondTerm', distanceTotal)
     mc.connectAttr(distanceNode + '.distance', conditionNode + '.firstTerm')
     mc.connectAttr(IK_stretch + '.outputX', conditionNode + '.colorIfTrueR')
 
-    globalScale = mc.shadingNode('multiplyDivide', n=IK_cntrls[0] + '_IKstretch_globalScale', au=True)
+    # global scale mult connections
+    mc.shadingNode('multiplyDivide', n=globalScale, au=True)
     mc.setAttr(globalScale + '.input1X', distanceTotal)
     mc.connectAttr(global_cntrl + '.scaleX', globalScale + '.input2X')
     mc.connectAttr(globalScale + '.outputX', conditionNode + '.secondTerm')
     mc.connectAttr(globalScale + '.outputX', IK_stretch + '.input2X')
 
-    blender = mc.shadingNode('blendColors', n=IK_cntrls[0] + '_IKstretch_blend', au=True)
+    # blender connections
+    mc.shadingNode('blendColors', n=blender, au=True)
     mc.addAttr(IK_cntrls[0], ln='Stretch', at='float', dv=1, min=0, max=1, w=True, r=True, k=True)
     mc.setAttr(blender + '.color2R', 1)
     mc.connectAttr(IK_cntrls[0] + '.Stretch', blender + '.blender')
     mc.connectAttr(conditionNode + '.outColorR', blender + '.color1R')
 
-    for x in range(len(orderedIK) - 1):
-        mc.connectAttr(blender + '.outputR', orderedIK[x] + '.scale' + orientation)
+    # connect the output of the blender to all the specified scale attrs of the IK joints
+    for x in range(len(IK_joints) - 1):
+        mc.connectAttr(blender + '.outputR', IK_joints[x] + '.scale' + orientation)
 
 
+#function to figure out the placement based on given orientation and distance
+def evaluate(ori, alt, oriDistance, aimDistance, o, k):
+    if '-' in ori:
+        o = o - oriDistance
+        if alt == True:
+            if k == aimDistance:
+                k = 0
+            else:
+                k = aimDistance
+    else:
+        o = o + oriDistance
+        if alt == True:
+            if k == aimDistance:
+                k = 0
+            else:
+                k = aimDistance
 
+    returnList = []
+    returnList.append(o)
+    returnList.append(k)
+
+    #return a list with o and k which are values
+    return returnList
 
