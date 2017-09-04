@@ -1,18 +1,9 @@
 import maya.cmds as mc
 import rig.rig_arm as rig
 from functools import partial
+reload(rig)
 
 null = rig.arm('null')
-
-def rigAll(*args):
-
-    for x in null.armList:
-        if mc.objExists(x):
-            null.rig_arm(x, 'bind_')
-
-def rigLocators(name, side, ori, alt, *args):
-    hinge = rig.arm(name, side)
-    hinge.locators(ori, alt, args)
 
 print 'UI'
 
@@ -31,23 +22,25 @@ class RDojo_UI:
         mymenu = mc.menu('RDojo_Menu', label='RDMenu', to=True, p='MayaWindow')
         mc.menuItem(label='Joint_Placement', sm=True, p=mymenu)
         mc.menuItem(label='Left_Arm_Placement',
-                    c=partial(rigLocators, 'arm', 'L', 'x', True, 'shoulder', 'elbow', 'wrist'))
+                    c=partial(self.rigLocators, 'arm', 'L', 'x', True, 'shoulder', 'elbow', 'wrist'))
         mc.menuItem(label='Right_Arm_Placement',
-                    c=partial(rigLocators, 'arm', 'R', '-x', True, 'shoulder', 'elbow', 'wrist'))
-        mc.menuItem(label='Rig', c=rigAll, p=mymenu)
+                    c=partial(self.rigLocators, 'arm', 'R', '-x', True, 'shoulder', 'elbow', 'wrist'))
+        mc.menuItem(label='Rig', c=self.rigAll, p=mymenu)
         mc.menuItem(label='Advanced Rig Tool', parent=mymenu, command=self.ui)
 
+        self.windowName = 'RDojo_Advanced'
         self.UIElements = {}
+        self.jointCount = 3
 
     def ui(self, *args):
-        windowName = 'RDojo_Advanced'
-        windowWidth = 500
-        windowHeight = 500
 
-        if mc.window(windowName, exists=True):
-            mc.deleteUI(windowName)
+        windowWidth = 350
+        windowHeight = 400
 
-        self.UIElements['window'] = mc.window(windowName, w=windowWidth, h = windowHeight, title = 'RDojo_UI', s=True)
+        if mc.window(self.windowName, exists=True):
+            mc.deleteUI(self.windowName)
+
+        self.UIElements['window'] = mc.window(self.windowName, w=windowWidth, h = windowHeight, title = 'RDojo_UI', s=True)
 
         self.UIElements['mainColumn'] = mc.columnLayout('mainColumn', adj=True)
         self.UIElements['row01'] = mc.rowLayout('row01', numberOfColumns=5)
@@ -77,30 +70,55 @@ class RDojo_UI:
         mc.separator(h=15, w=15, style='in', p=self.UIElements['mainColumn'])
 
         mc.text(l='Joint Names:', al='left', p=self.UIElements['mainColumn'])
-        self.UIElements['joint01'] = mc.textField('joint01', text='shoulder', p=self.UIElements['mainColumn'])
-        self.UIElements['joint02'] = mc.textField('joint02', text='elbow', p=self.UIElements['mainColumn'])
-        self.UIElements['joint03'] = mc.textField('joint03', text='wrist', p=self.UIElements['mainColumn'])
+        for x in range(self.jointCount):
+            jointName = 'joint' + str(x)
+            self.UIElements[jointName] = mc.textField(jointName, text=jointName, p=self.UIElements['mainColumn'])
+
+
+        self.UIElements['row03'] = mc.rowLayout('row03', numberOfColumns=2, p=self.UIElements['mainColumn'])
+        mc.button(l='Add Joint', c=self.addJoints, p=self.UIElements['row03'], w=windowWidth/2)
+        #mc.separator(h=15, w=15, style="in", hr=False)
+        mc.button(l='Remove Joint', c=self.removeJoints, p=self.UIElements['row03'], w=windowWidth/2)
 
         mc.button(l='Make Locators', c=self.makeLocators, p=self.UIElements['mainColumn'])
-        mc.button(l='Rig', c=rigAll, p=self.UIElements['mainColumn'])
+        mc.button(l='Rig', c=self.rigAll, p=self.UIElements['mainColumn'])
 
-        mc.showWindow(windowName)
+        mc.showWindow(self.windowName)
 
     def makeLocators(self, *args):
+
         name = mc.textField(self.UIElements['name'], query = True, text = True)
         side = mc.textField(self.UIElements['side'], query = True, text = True)
         ori = mc.radioCollection(self.UIElements['orientationRadio'], q=True, sl=True)
         negative = mc.checkBox(self.UIElements['negative'], q=True, v=True)
         alt = mc.checkBox(self.UIElements['alternate'], q=True, v=True)
-        joint01 = mc.textField(self.UIElements['joint01'], query = True, text = True)
-        joint02 = mc.textField(self.UIElements['joint02'], query = True, text = True)
-        joint03 = mc.textField(self.UIElements['joint03'], query = True, text = True)
-        sign = ''
 
+        sign = ''
         if negative == True:
             sign = sign + '-'
 
-        hinge = rig.arm(name, side)
-        hinge.locators(sign + ori, alt, joint01, joint02, joint03)
+        jointNames = []
+        for x in range(self.jointCount):
+            jointNames.append(mc.textField(self.UIElements['joint' + str(x)], query = True, text = True))
 
+        hinge = rig.arm(name, side)
+        hinge.locators(sign + ori, alt, jointNames)
+
+    def rigAll(self, *args):
+
+        for x in null.armList:
+            if mc.objExists(x):
+                null.rig_arm(x, 'bind_')
+
+    def rigLocators(self, name, side, ori, alt, *args):
+        hinge = rig.arm(name, side)
+        hinge.locators(ori, alt, args)
+
+    def addJoints(self, *args):
+        self.jointCount = self.jointCount + 1
+        self.ui()
+
+    def removeJoints(self, *args):
+        self.jointCount = self.jointCount - 1
+        self.ui()
 
