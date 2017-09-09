@@ -24,7 +24,19 @@ rigData["MidOriJnt"] = [["orient_lf_middle_fing_JNT_02", "orient_lf_middle_fing_
 rigData["PointOriJnt"] = [["orient_lf_point_fing_JNT_02", "orient_lf_point_fing_JNT_03", "orient_lf_point_fing_JNT_04", "orient_lf_pointEnd_fing_JNT"],
 							["orient_rt_point_fing_JNT_02", "orient_rt_point_fing_JNT_03", "orient_rt_point_fing_JNT_04", "orient_rt_pointEnd_fing_JNT"]]	
 rigData["ThumbOriJnt"] = [["orient_lf_thumb_fing_JNT_02", "orient_lf_thumb_fing_JNT_03", "orient_lf_thumbEnd_fing_JNT"],
-							["orient_rt_thumb_fing_JNT_02", "orient_rt_thumb_fing_JNT_03", "orient_rt_thumbEnd_fing_JNT"]]						
+							["orient_rt_thumb_fing_JNT_02", "orient_rt_thumb_fing_JNT_03", "orient_rt_thumbEnd_fing_JNT"]]
+
+
+rigData["FingerCompJoints"] = [["comp_lf_pinky_fing_JNT_02", "comp_lf_pinky_fing_JNT_03" , "comp_lf_pinky_fing_JNT_04", "comp_lf_pinkyEnd_fing_JNT",
+							"comp_lf_ring_fing_JNT_02", "comp_lf_ring_fing_JNT_03", "comp_lf_ring_fing_JNT_04", "comp_lf_ringEnd_fing_JNT",
+							"comp_lf_middle_fing_JNT_02", "comp_lf_middle_fing_JNT_03", "comp_lf_middle_fing_JNT_04", "comp_lf_middleEnd_fing_JNT",
+							"comp_lf_point_fing_JNT_02", "comp_lf_point_fing_JNT_03", "comp_lf_point_fing_JNT_04", "comp_lf_pointEnd_fing_JNT",
+							"comp_lf_thumb_fing_JNT_02", "comp_lf_thumb_fing_JNT_03", "comp_lf_thumb_fing_JNT_04"],
+							["comp_rt_pinky_fing_JNT_02", "comp_rt_pinky_fing_JNT_03" , "comp_rt_pinky_fing_JNT_04", "comp_rt_pinkyEnd_fing_JNT",
+							"comp_rt_ring_fing_JNT_02", "comp_rt_ring_fing_JNT_03", "comp_rt_ring_fing_JNT_04", "comp_rt_ringENd_fing_JNT",
+							"comp_rt_middle_fing_JNT_02", "comp_rt_middle_fing_JNT_03", "comp_rt_middle_fing_JNT_04", "comp_rt_middleEnd_fing_JNT",
+							"comp_rt_point_fing_JNT_02", "comp_rt_point_fing_JNT_03", "comp_rt_point_fing_JNT_04", "comp_rt_pointEnd_fing_JNT",
+							"comp_rt_thumb_fing_JNT_02", "comp_rt_thumb_fing_JNT_03", "comp_rt_thumbEnd_fing_JNT"]]							
 
 
 rigData["PinkyBnJnt"] = [["bn_lf_pinky_fing_JNT_02" , "bn_lf_pinky_fing_JNT_03", "bn_lf_pinky_fing_JNT_04", "bn_lf_pinkyEnd_fing_JNT"],
@@ -48,6 +60,22 @@ rigData["FingerFKJoints"] = [["FK_lf_pinky_fing_JNT_01", "FK_lf_pinky_fing_JNT_0
 							"FK_rt_middle_fing_JNT_01", "FK_rt_middle_fing_JNT_02", "FK_rt_middle_fing_JNT_03", "FK_rt_middle_fing_JNT_04",
 							"FK_rt_point_fing_JNT_01", "FK_rt_point_fing_JNT_02", "FK_rt_point_fing_JNT_03", "FK_rt_point_fing_JNT_04",
 							"FK_rt_thumb_fing_JNT_01", "FK_rt_thumb_fing_JNT_02", "FK_rt_thumb_fing_JNT_03"]]
+# For parenting , joints without wrist and end joints
+rigData["FingerBnJoints01"] = [["bn_lf_pinky_fing_JNT_01", "bn_lf_pinky_fing_JNT_02" , "bn_lf_pinky_fing_JNT_03", "bn_lf_pinky_fing_JNT_04",
+							"bn_lf_ring_fing_JNT_01", "bn_lf_ring_fing_JNT_02", "bn_lf_ring_fing_JNT_03", "bn_lf_ring_fing_JNT_04",
+							"bn_lf_middle_fing_JNT_01", "bn_lf_middle_fing_JNT_02", "bn_lf_middle_fing_JNT_03", "bn_lf_middle_fing_JNT_04",
+							"bn_lf_point_fing_JNT_01", "bn_lf_point_fing_JNT_02", "bn_lf_point_fing_JNT_03", "bn_lf_point_fing_JNT_04",
+							"bn_lf_thumb_fing_JNT_01", "bn_lf_thumb_fing_JNT_02", "bn_lf_thumb_fing_JNT_03"],
+							["bn_rt_pinky_fing_JNT_01", "bn_rt_pinky_fing_JNT_02" , "bn_rt_pinky_fing_JNT_03", "bn_rt_pinky_fing_JNT_04",
+							"bn_rt_ring_fing_JNT_01", "bn_rt_ring_fing_JNT_02", "bn_rt_ring_fing_JNT_03", "bn_rt_ring_fing_JNT_04",
+							"bn_rt_middle_fing_JNT_01", "bn_rt_middle_fing_JNT_02", "bn_rt_middle_fing_JNT_03", "bn_rt_middle_fing_JNT_04",
+							"bn_rt_point_fing_JNT_01", "bn_rt_point_fing_JNT_02", "bn_rt_point_fing_JNT_03", "bn_rt_point_fing_JNT_04",
+							"bn_rt_thumb_fing_JNT_01", "bn_rt_thumb_fing_JNT_02", "bn_rt_thumb_fing_JNT_03"]]
+
+
+
+
+
 rigData["WristFKJoints"] = [["CTRL_lf_wristBase_JNT"],
                             ["CTRL_rt_wristBase_JNT"]]
 							
@@ -201,13 +229,22 @@ def finger_duplicate_rename(jntType):
 							cmds.parent(rigData["ThumbOriJnt"][i][d], rigData["ThumbBnJnt"][i][d-1])
 	for f in range(len(rigData["FingerFKJoints"])):
 		dpJnt = cmds.duplicate(jntType+rigData["FingerJoints"][f][24], rc=True, n=rigData["WristFKJoints"][f][0])
+		dpJnt.remove(dpJnt[0])
 		for fk in range(len(rigData["FingerFKJoints"][f])):
 			cmds.rename(dpJnt[1::2][fk], rigData["FingerFKJoints"][f][fk])
+			dpJnt.remove(dpJnt[0::2][fk])
+			cmds.rename(dpJnt[fk], rigData["FingerCompJoints"][f][fk])
+		
 	
 	for n in range(len(rigData["FingerFKJoints"])):
 	    for ng in range(len(rigData["FingerFKJoints"][n])):
-	        if ng!=4 or ng!=9 or ng!=14 or ng!=19 or ng!=23:
-		        cmds.connectAttr(rigData["FingerFKJoints"][n][ng]+".translate", jntType+rigData["FingerJoints"][n][ng]+".translate")
+	        if ng!=3 or ng!=8 or ng!=13 or ng!=18 or ng!=22:
+		        cmds.connectAttr(rigData["FingerFKJoints"][n][ng]+".rotate", rigData["FingerBnJoints01"][n][ng]+".rotate")
+
+t 
+    
+
+
 
 
 
@@ -215,3 +252,10 @@ finger_createJnt("bn_")
 finger_orientJoint("bn_")
 finger_cleanJntOrient("bn_")
 finger_duplicate_rename("bn_")
+
+
+dpJnt = cmds.duplicate("bn_"+rigData["FingerJoints"][0][24], rc=True, n=rigData["WristFKJoints"][0][0])
+dpJnt.remove(dpJnt[0])
+for fk in range(len(rigData["FingerFKJoints"][0])):
+		cmds.rename(dpJnt[0::2][fk], rigData["FingerFKJoints"][0][fk])
+		dpJnt.remove(dpJnt[0::2][fk])

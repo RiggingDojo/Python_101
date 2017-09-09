@@ -47,8 +47,8 @@ rigData["LegStretchyIK"] = [
                               "rt_leg_distD", "rt_upleg_distD", "rt_lowleg_distD", "rt_thigh_distLoc", "rt_knee_distLoc", "rt_ankle_distLoc", "rt_ankle_distLoc"]
                                ]
 rigData["IaF_SwitchLeg"] = [
-                         ["IaF_lf_thigh_pairB", "IaF_lf_knee_pairB", "IaF_lf_ankle_pairB", "IaF_lf_leg_switch_CTRL", "IaF_lf_leg_switch_CTRL_srt"],
-                         ["IaF_rt_thigh_pairB", "IaF_rt_knee_pairB", "IaF_rt_ankle_pairB", "IaF_rt_leg_switch_CTRL", "IaF_rt_leg_switch_CTRL_srt"]
+                         ["IaF_lf_thigh_pairB", "IaF_lf_knee_pairB", "IaF_lf_ankle_pairB", "IaF_lf_ball_pairB", "IaF_lf_leg_switch_CTRL", "IaF_lf_leg_switch_CTRL_srt"],
+                         ["IaF_rt_thigh_pairB", "IaF_rt_knee_pairB", "IaF_rt_ankle_pairB", "IaF_rt_ball_pairB", "IaF_rt_leg_switch_CTRL", "IaF_rt_leg_switch_CTRL_srt"]
                           ]
 
 rigData["leg_footRoll"] = [
@@ -677,20 +677,27 @@ def leg_footRoll():
         cmds.connectAttr(rigData["IK_LegList"][i][0]+".ToeTwist", rigData["IK_LegList"][i][15]+".rotateY")
         cmds.connectAttr(rigData["IK_LegList"][i][0]+".ToeTap", rigData["IK_LegList"][i][15]+".rotateZ")
         cmds.connectAttr(rigData["IK_LegList"][i][0]+".ToeSide", rigData["IK_LegList"][i][15]+".rotateX")
-
-        cmds.setDrivenKeyframe(rigData["IK_LegList"][i][12]+".rotateY", rigData["IK_LegList"][i][13]+".rotateY", cd = rigData["IK_LegList"][i][0]+".SideRoll")
-        cmds.setAttr(rigData["IK_LegList"][i][12]+".rotateY", -90)
-        cmds.setAttr(rigData["IK_LegList"][i][13]+".rotateY", 0)
+        
+        cmds.setDrivenKeyframe(rigData["IK_LegList"][i][12]+".rotateY", rigData["IK_LegList"][i][13]+".rotateY", cd = rigData["IK_LegList"][0][0]+".SideRoll")
         cmds.setAttr(rigData["IK_LegList"][i][0]+".SideRoll", -90)
+        cmds.setAttr(rigData["IK_LegList"][i][12]+".rotateY", 90)
+        cmds.setAttr(rigData["IK_LegList"][i][13]+".rotateY", 0)
         cmds.setDrivenKeyframe(rigData["IK_LegList"][i][12]+".rotateY", rigData["IK_LegList"][i][13]+".rotateY", cd = rigData["IK_LegList"][i][0]+".SideRoll")
+        cmds.setAttr(rigData["IK_LegList"][i][0]+".SideRoll", 90)
         cmds.setAttr(rigData["IK_LegList"][i][12]+".rotateY", 0)
         cmds.setAttr(rigData["IK_LegList"][i][13]+".rotateY", 90)
-        cmds.setAttr(rigData["IK_LegList"][i][0]+".SideRoll", 90)
         cmds.setDrivenKeyframe(rigData["IK_LegList"][i][12]+".rotateY", rigData["IK_LegList"][i][13]+".rotateY", cd = rigData["IK_LegList"][i][0]+".SideRoll")
+        cmds.setAttr(rigData["IK_LegList"][i][0]+".SideRoll", 0)
+        cmds.setAttr(rigData["IK_LegList"][i][12]+".rotateY", 0)
+        cmds.setAttr(rigData["IK_LegList"][i][13]+".rotateY", 0)
+        cmds.setDrivenKeyframe(rigData["IK_LegList"][i][12]+".rotateY", rigData["IK_LegList"][i][13]+".rotateY", cd = rigData["IK_LegList"][i][0]+".SideRoll")
+        
+                
+        
 
 def IaF_leg_switch():
     for i in range(len(rigData["IaF_SwitchLeg"])):
-        for o in range(len(rigData["IaF_SwitchLeg"][i][:3])):
+        for o in range(len(rigData["IaF_SwitchLeg"][i][:4])):
             pairB = cmds.shadingNode("pairBlend", asUtility=True, n=rigData["IaF_SwitchLeg"][i][o])
             cmds.connectAttr("IK_"+rigData["LegJoints"][i][o]+".translate", pairB+".inTranslate1")
             cmds.connectAttr("FK_"+rigData["LegJoints"][i][o]+".translate", pairB+".inTranslate2")
