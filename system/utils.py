@@ -62,6 +62,38 @@ def getDigits(str1):
     else:
         return c
 
+
+def orientationNormal(axis):
+
+    # make axis upper case in case we enter x, y, or z
+    axis = axis.upper()
+
+    # if orientation isnt x, y, or z, spit out error
+    if 'X' not in axis and 'Y' not in axis and 'Z' not in axis:
+        mc.error('Orientation can only be x, y, or z.')
+
+    # translating axis string to vector list
+    if axis == 'X':
+        aimVector = [1, 0, 0]
+
+    if axis == 'Y':
+        aimVector = [0, 1, 0]
+
+    if axis == 'Z':
+        aimVector = [0, 0, 1]
+
+    if axis == '-X':
+        aimVector = [-1, 0, 0]
+
+    if axis == '-Y':
+        aimVector = [0, -1, 0]
+
+    if axis == '-Z':
+        aimVector = [0, 0, -1]
+
+    return aimVector
+
+
 #check if something exists, if it does, warn us and delete it
 def checkExists(*args):
     for check in args:
@@ -99,17 +131,27 @@ def makeJointChain(theParent, prefix, name):
     list = mc.listRelatives(name, ad=True, type='transform')
     list.reverse()
 
+
     jointList = []
 
     #gets objecs position, makes a joint on that position, add it to the jointList for us to return later
     for locator in list:
-        mc.select(locator)
-        mc.setToolTo('Move')
-        locatorPosition = mc.manipMoveContext('Move', q=True, p=True)
-        aJoint = mc.joint(n=prefix + locator, p=locatorPosition)
-        jointList.append(aJoint)
-        mc.parent(locator, 'extras_grp')
-        mc.select(cl=True)
+
+        if 'AIMloc_' in locator:
+            writeJson(os.environ["RDOJO_DATA"] + '/aim.json', locator)
+            list.remove(locator)
+            print 'removed locator from list, here is the list:'
+            print list
+
+    for locator in list:
+            mc.select(locator)
+            mc.setToolTo('Move')
+            locatorPosition = mc.manipMoveContext('Move', q=True, p=True)
+            aJoint = mc.joint(n=prefix + locator, p=locatorPosition)
+            jointList.append(aJoint)
+            mc.parent(locator, 'extras_grp')
+            mc.select(cl=True)
+
 
     #if the parent you specified exists, parent the joints to that object
     if mc.objExists(theParent) == True:
@@ -122,6 +164,7 @@ def makeJointChain(theParent, prefix, name):
         for object in list:
             mc.parent(prefix + object, w=True)
 
+    print jointList
     mc.delete(name)
     writeJson(os.environ["RDOJO_DATA"] + '/data.json', jointList)
     return jointList
@@ -129,22 +172,7 @@ def makeJointChain(theParent, prefix, name):
 #orients the objects in list. Note: ordering is based on order of list. also takes what direction you would like it to be oriented
 def orientChain(list, orientation='x'):
 
-    #make orientation upper case in case we enter x, y, or z
-    orientation = orientation.upper()
-
-    #if orientation isnt x, y, or z, spit out warning
-    if orientation != 'X' and orientation != 'Y' and orientation != 'Z':
-        mc.warning('Orientation can only be x, y, or z.')
-
-    #translating orientation to the vectors our aim constraint takes
-    if orientation == 'X':
-        aimVector = [1, 0, 0]
-
-    if orientation == 'Y':
-        aimVector = [0, 1, 0]
-
-    if orientation == 'Z':
-        aimVector = [0, 0, 1]
+    aimVector = orientationNormal(orientation)
 
     #aim the joint to the next joint in the list, then delete the aim constraint
     for x in range(len(list)):
@@ -163,7 +191,23 @@ def parentChain(list):
         if list[x] != list[0]:
             mc.parent(list[x], list[x - 1])
 
+    mc.setAttr(list[-1] + '.jointOrientX', 0)
+    mc.setAttr(list[-1] + '.jointOrientY', 0)
+    mc.setAttr(list[-1] + '.jointOrientZ', 0)
+
     mc.select(cl=True)
+
+
+#function to aim the end of a list to the end aim locator.
+def aimEnd(list, orientation='x'):
+    #load the last aim loc that we made into a variable
+    aimLoc = json.loads(readJson(os.environ["RDOJO_DATA"] + '/aim.json'))
+
+    #if it exists, orient the last object of the list to that aim locator, then delete the aim locator.
+    if mc.objExists(aimLoc) == True:
+        orientList = [list[-1], aimLoc]
+        orientChain(orientList, orientation)
+        mc.delete(aimLoc)
 
 # function to make a quad arrow
 def create_quad_arrow(name):
@@ -273,16 +317,17 @@ def duplicateNewName(object, search, replace, colour):
 
 
 # make controls based on the hierarchy of a list
-def cntrlHierarchy(list, radius, colour, toParent='cntrl_grp'):
+def cntrlHierarchy(list, radius, colour, orientation='x', toParent='cntrl_grp'):
 
     cntrlList = []
+    aimVector = orientationNormal(orientation)
 
     #if the list is a string, make it a list
     list = stringIntoList(list)
 
     for object in list:
         # make a new control for object. Get the parent of the joint so that we know the order and in case it returns "None".
-        cntrl = mc.circle(n=object + '_cntrl', nr=[1, 0, 0], r=radius)
+        cntrl = mc.circle(n=object + '_cntrl', nr=aimVector, r=radius)
         objectParent = mc.listRelatives(object, p=True)
 
         # create an empty node and parent constraint it to the object to match position and orientation
@@ -350,18 +395,13 @@ def offsetCreator(list):
         elif objectParent is None:
             mc.parent(object, 'offset_' + object)
 
-            # function to blend between two chains of things, such as a FK IK blend.
 
 #function to blend in between two chains.
 def blendThree(list1, list2, list3, controlToAttribute, attributeLongName, fullName):
 
     # if the lists arent the same length, spit out a warning
     if len(list1) != len(list2) or len(list1) != len(list3):
-        mc.warning('The lists in blendThree dont have the same amount of objects')
-
-    list1.sort()
-    list2.sort()
-    list3.sort()
+        mc.error('The lists in blendThree dont have the same amount of objects')
 
     attributeLongName = fullName + '_' + attributeLongName
 
@@ -630,15 +670,16 @@ def stretchyIK(IK_cntrls, IK_joints, orientation='x', global_cntrl='global_cntrl
 
 #function to figure out the placement based on given orientation and distance
 def evaluate(ori, alt, oriDistance, aimDistance, o, k):
+
     if '-' in ori:
-        o = o - oriDistance
+        o = int(o) - int(oriDistance)
         if alt == True:
             if k == aimDistance:
                 k = 0
             else:
                 k = aimDistance
     else:
-        o = o + oriDistance
+        o = int(o) + int(oriDistance)
         if alt == True:
             if k == aimDistance:
                 k = 0
