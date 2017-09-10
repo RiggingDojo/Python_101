@@ -29,16 +29,17 @@ class arm:
         self.rigInfo['bind_joints'] = utils.makeJointChain('joints_grp', prefix, name)
         utils.rotateToJointOrient(utils.orientChain(self.rigInfo['bind_joints'], orientation='x'))
         utils.parentChain(self.rigInfo['bind_joints'])
+        utils.aimEnd(self.rigInfo['bind_joints'], orientation='x')
 
         # duplicate bind shoulder to make FK chain, make fk cntrls, connect fk cntrls to fk joints, make a volumetric scaling for FK
         self.rigInfo['FK_joints'] = utils.duplicateNewName(utils.getEnds(self.rigInfo['bind_joints'])[0], prefix, 'FK_', 13)
-        self.rigInfo['FK_cntrls'] = utils.cntrlHierarchy(self.rigInfo['FK_joints'], 1, 13, toParent='cntrl_grp')
+        self.rigInfo['FK_cntrls'] = utils.cntrlHierarchy(self.rigInfo['FK_joints'], 1, 13, orientation='x', toParent='cntrl_grp')
         utils.constrainLists(self.rigInfo['FK_cntrls'], self.rigInfo['FK_joints'], "yes", "yes", "none")
         utils.volumetricFK(self.rigInfo['FK_cntrls'], self.rigInfo['FK_joints'], orientation='x')
 
         # duplicate bind joints to make IK chain. Make cntrl for the end of the IK. make the IK then make the IK joints stretchy.
         self.rigInfo['IK_joints'] = utils.duplicateNewName(self.rigInfo['bind_joints'][0], prefix, 'IK_', 15)
-        self.rigInfo['IK_cntrls'] = utils.cntrlHierarchy(utils.getEnds(self.rigInfo['IK_joints'])[1], 1.5, 24, toParent='cntrl_grp')
+        self.rigInfo['IK_cntrls'] = utils.cntrlHierarchy(utils.getEnds(self.rigInfo['IK_joints'])[1], 1.5, 24, orientation='x', toParent='cntrl_grp')
         utils.makeIK(self.rigInfo['IK_joints'], self.rigInfo['IK_cntrls'])
         utils.stretchyIK(self.rigInfo['IK_cntrls'], self.rigInfo['IK_joints'], orientation='x', global_cntrl='global_cntrl')
 
@@ -46,7 +47,7 @@ class arm:
         utils.blendThree(self.rigInfo['bind_joints'], self.rigInfo['FK_joints'], self.rigInfo['IK_joints'], 'global_cntrl', 'FKIK', name)
 
     #function to make locators on screen. specify orientaion, if you want it to alternate, and the name of the locators
-    def locators(self, orientation, alternating, *args):
+    def locators(self, orientation, alternating, aim, *args):
 
         #it all starts at the origin
         x = 0
@@ -57,6 +58,8 @@ class arm:
 
         #this list will hold our locators so that we can keep track of them
         locList = []
+        digitList = []
+        num = 0
 
         #make orientation capital to make it easier to compare
         orientation = orientation.upper()
@@ -85,6 +88,23 @@ class arm:
         #make a group to organize our locators and lock it.
         tempGrp = mc.createNode('transform', n=self.fullName)
         utils.lockHideAttr(tempGrp, ['tx', 'ty', 'tz', 'rx', 'ry', 'rz', 'sx', 'sy', 'sz', 'visibility'], True, True)
+
+        #get all the aim locators in scene
+        aimList = mc.ls('*AIMloc_*', type='transform')
+
+        #if there are aim locators in the scene, figure out the digits in the them, and add one to the highest digit
+        if aimList != []:
+
+            for locator in aimList:
+                for x in locator:
+                    if x.isdigit() == True:
+                        digitList.append(x)
+
+            num = int(max(digitList)) + 1
+
+        #if we want an aim locator, give it a name plus the highest digit we found + 1
+        if aim == True:
+            newList.append('AIMloc_' + str(num))
 
         for object in newList:
 
@@ -120,3 +140,5 @@ class arm:
             #if the object is the last object in the list(the top parent), then parent the object to the group we made
             elif locList[i] == locList[-1]:
                 mc.parent(locList[i], tempGrp)
+
+
