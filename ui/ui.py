@@ -22,11 +22,11 @@ class RDojo_UI:
         mymenu = mc.menu('RDojo_Menu', label='RDMenu', to=True, p='MayaWindow')
         mc.menuItem(label='Joint_Placement', sm=True, p=mymenu)
         mc.menuItem(label='Left_Arm_Placement',
-                    c=partial(self.rigLocators, 'arm', 'L', 'x', True, 'shoulder', 'elbow', 'wrist'))
+                    c=partial(self.rigLocators, 'arm', 'L', 'x', True, False, 'shoulder', 'elbow', 'wrist'))
         mc.menuItem(label='Right_Arm_Placement',
-                    c=partial(self.rigLocators, 'arm', 'R', '-x', True, 'shoulder', 'elbow', 'wrist'))
+                    c=partial(self.rigLocators, 'arm', 'R', '-x', True, False, 'shoulder', 'elbow', 'wrist'))
         mc.menuItem(label='Rig', c=self.rigAll, p=mymenu)
-        mc.menuItem(label='Advanced Rig Tool', parent=mymenu, command=self.ui)
+        mc.menuItem(label='Advanced Rig Tool', parent=mymenu, command=self.updateUI)
 
         self.windowName = 'RDojo_Advanced'
         self.UIElements = {}
@@ -36,9 +36,6 @@ class RDojo_UI:
 
         windowWidth = 350
         windowHeight = 400
-
-        if mc.window(self.windowName, exists=True):
-            mc.deleteUI(self.windowName)
 
         self.UIElements['window'] = mc.window(self.windowName, w=windowWidth, h = windowHeight, title = 'RDojo_UI', s=True)
 
@@ -66,12 +63,14 @@ class RDojo_UI:
         self.UIElements['negative'] = mc.checkBox('negative', l='Negative Axis', v=False,
                                                   p=self.UIElements['mainColumn'])
         self.UIElements['alternate'] = mc.checkBox('alternate', l='Alternate', v=True, p=self.UIElements['mainColumn'])
+        self.UIElements['endAim'] = mc.checkBox('endAim', l='End Aim Locator', v=True, p=self.UIElements['mainColumn'])
+
 
         mc.separator(h=15, w=15, style='in', p=self.UIElements['mainColumn'])
 
         mc.text(l='Joint Names:', al='left', p=self.UIElements['mainColumn'])
         for x in range(self.jointCount):
-            jointName = 'joint' + str(x)
+            jointName = 'joint_' + str(x)
             self.UIElements[jointName] = mc.textField(jointName, text=jointName, p=self.UIElements['mainColumn'])
 
 
@@ -84,6 +83,7 @@ class RDojo_UI:
         mc.button(l='Rig', c=self.rigAll, p=self.UIElements['mainColumn'])
 
         mc.showWindow(self.windowName)
+        print 'showing ui window'
 
     def makeLocators(self, *args):
 
@@ -92,6 +92,7 @@ class RDojo_UI:
         ori = mc.radioCollection(self.UIElements['orientationRadio'], q=True, sl=True)
         negative = mc.checkBox(self.UIElements['negative'], q=True, v=True)
         alt = mc.checkBox(self.UIElements['alternate'], q=True, v=True)
+        endAim = mc.checkBox(self.UIElements['endAim'], q=True, v=True)
 
         sign = ''
         if negative == True:
@@ -99,10 +100,10 @@ class RDojo_UI:
 
         jointNames = []
         for x in range(self.jointCount):
-            jointNames.append(mc.textField(self.UIElements['joint' + str(x)], query = True, text = True))
+            jointNames.append(mc.textField(self.UIElements['joint_' + str(x)], query = True, text = True))
 
         hinge = rig.arm(name, side)
-        hinge.locators(sign + ori, alt, jointNames)
+        hinge.locators(sign + ori, alt, endAim, jointNames)
 
     def rigAll(self, *args):
 
@@ -110,15 +111,22 @@ class RDojo_UI:
             if mc.objExists(x):
                 null.rig_arm(x, 'bind_')
 
-    def rigLocators(self, name, side, ori, alt, *args):
+    def rigLocators(self, name, side, ori, alt, aim, *args):
         hinge = rig.arm(name, side)
-        hinge.locators(ori, alt, args)
+        hinge.locators(ori, alt, aim, args)
 
     def addJoints(self, *args):
         self.jointCount = self.jointCount + 1
-        self.ui()
+        self.updateUI()
 
     def removeJoints(self, *args):
         self.jointCount = self.jointCount - 1
+        self.updateUI()
+
+    def updateUI(self, *args):
+        if mc.window(self.windowName, exists=True):
+            mc.deleteUI(self.windowName)
+            print 'deleted OLD UI'
+
         self.ui()
 
